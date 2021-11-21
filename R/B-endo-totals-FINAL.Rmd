@@ -40,6 +40,15 @@ counts <- counts %>%
          INL_perc=INL_bendo/INL_chat*100,
          total_perc=total_bendo/total_chat*100)
 
+#checking if the cell counts are normally distributed
+shapiro.test(counts$INL_chat)
+shapiro.test(counts$INL_bendo)
+shapiro.test(counts$GCL_chat)
+shapiro.test(counts$GCL_bendo)
+shapiro.test(counts$total_chat)
+shapiro.test(counts$total_bendo)
+
+
 percs <- counts %>%
   #give one row for each GCL, INL, and total
   #retain only the percentages, not the raw counts
@@ -54,6 +63,14 @@ percs <- counts %>%
                               .fun=max, .desc=FALSE),
          time = as.factor(time))
 head(percs, 3)
+
+#checking if the percentages are normally distributed
+gc <- percs %>% filter(layer =="GCL")
+shapiro.test(gc$perc)
+ic <- percs %>% filter(layer =="INL")
+shapiro.test(ic$perc)
+tc <- percs %>% filter(layer =="total")
+shapiro.test(tc$perc)
 ```
 
 ```{r}
