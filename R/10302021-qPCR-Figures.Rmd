@@ -2,7 +2,9 @@
 title: "10302021-qpCR-Figures"
 author: "C-T Berezin"
 date: "10/30/2021"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r}
@@ -26,7 +28,7 @@ pomc <- pomc %>% mutate(Time = as.factor(Time)) %>%
 #p-values from SigmaPlot
 pomc_stats <- tibble::tribble(
   ~group1, ~group2, ~group3, ~p.adj,
-  "08:00", "16:00", "00:00", "p=0.865"
+  "08:00", "16:00", "00:00", "0.865"
 )
 
 
@@ -43,7 +45,7 @@ pomc_plot <- ggplot(pomc, aes(x=Time, y=Relative.GE)) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
   
 
-ggsave(filename="pomc_fig_w_bars.png", plot=pomc_plot, height=3, width=3)
+ggsave(filename="../figures/pomc_fig_w_bars.png", plot=pomc_plot, height=3, width=3)
 ```
 
 ```{r}
@@ -54,7 +56,7 @@ mcko <- mcko %>%
 #p-values from SigmaPlot
 mcko_stats <- tibble::tribble(
   ~group1, ~group2, ~p.adj,
-  "WT", "McKO", "p<0.001"
+  "WT", "McKO", "<0.001"
 )
 
 mcko_plot <- mcko %>% 
@@ -70,5 +72,5 @@ mcko_plot <- mcko %>%
     y.position = 1.5, step.increase = 0.1,
     label = "p.adj") +
   scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
-ggsave(filename="mcko_fig_bars.png", plot=mcko_plot, height=4, width=3)
+ggsave(filename="../figures/mcko_fig_bars.png", plot=mcko_plot, height=4, width=3)
 ```
