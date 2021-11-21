@@ -1,0 +1,148 @@
+---
+title: "Analysis of B-endorphin/ChAT IHC Count Data"
+author: "C-T Berezin"
+date: "11/21/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r, message = FALSE, warning = FALSE}
+library(knitr)
+library(tidyverse)
+library(dplyr)
+library(WebPower)
+```
+
+
+```{r}
+counts <- read_csv("../data/B-endo-totals.csv")
+counts <- counts %>%
+  dplyr::select(-ChAT, -Bendo, -Percentage) %>%
+  #make columns lowercase
+  rename(mouse = Mouse,
+        light = Light,
+        time = Time,
+        sex = Sex,
+        age = Age,
+        GCL_chat = GCLchat,
+        GCL_bendo = GCLbendo,
+        INL_chat = INLchat,
+        INL_bendo = INLbendo) %>%
+  #update the classes of some columns
+  mutate(mouse = as.character(mouse),
+         light = factor(as.factor(light), levels=c("light", "dark")),
+  #reintroduce total counts
+         total_chat = GCL_chat+INL_chat,
+         total_bendo = GCL_bendo+INL_bendo) %>%
+  #calculate percentages
+  mutate(GCL_perc=GCL_bendo/GCL_chat*100,
+         INL_perc=INL_bendo/INL_chat*100,
+         total_perc=total_bendo/total_chat*100)
+
+percs <- counts %>%
+  #give one row for each GCL, INL, and total
+  #retain only the percentages, not the raw counts
+  dplyr::select(-c(GCL_chat:total_bendo)) %>% 
+  pivot_longer(GCL_perc:total_perc,
+               names_to="type",
+               values_to="perc") %>%
+  separate(type, sep="_", into=c("layer", "protein")) %>% 
+  dplyr::select(-protein) %>% 
+  mutate(layer = as.factor(layer),
+         mouse = fct_reorder(as.factor(mouse), perc,
+                              .fun=max, .desc=FALSE),
+         time = as.factor(time))
+head(percs, 3)
+```
+
+```{r}
+aov <- aov(perc ~ light * time * layer, percs)
+summary(aov)
+TukeyHSD(aov)
+
+#three way ANOVA power calc
+#factors A=light, B=time, C=layer
+#number levels in each J=2, K=2, C=3
+#ng = J * K * L = 2*2*3 = 12
+#n = #/group * ng = 3*12 = 36
+#ndf = (J-1)*(K-1)*(L-1) = 1*1*2 = 2
+#f=0.5 is default
+#no documentation on calculating f for a 3-way ANOVA
+wp.kanova(n=36, ndf=2, f=0.5, alph=0.05, ng=12)
+```
+
+```{r}
+#set up a table of p-values for labeling the graphs below
+label <- tibble(mouse = c("97", "93", "57"),
+                perc = c(Inf, Inf, Inf),
+                time = c("day", "night", "night"),
+                light = c("dark", "light", "dark"),
+                label = c("p=0.00009", "p=0.0058", "p=0.037"))
+```
+
+
+```{r}
+#1 row facet wrap, small
+bendo_ihc <- percs %>% ggplot(aes(x=mouse, y=perc)) +
+  geom_bar(aes(fill=layer), stat="identity", position="dodge") +
+  facet_wrap(time ~ factor(light, c("light", "dark")), scales="free_x", nrow=1, as.table=FALSE) +
+  labs(y="% of B-endorphin+ ChAT cells",
+       col="Light Condition", shape="Cell Layer",
+       title = "Figure 2") +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        text = element_text(size=4),
+        plot.title = element_text(size=4, margin=margin(0,0,0,0), face = "bold"),
+        legend.key.size = unit(0.25, 'cm'),
+        strip.text.x = element_text(size = 3, margin = margin(0, 0, 0.02, 0, "cm")),
+        axis.ticks = element_blank(),
+        legend.margin=margin(0,0,0,0)) +
+  scale_fill_manual(values = c("yellow", "cornflowerblue", "grey50")) +
+  geom_text(aes(label=label), data=label, vjust="top", hjust="left", size=1)
+
+ggsave(filename="../figures/bendo_ihc.png", plot=bendo_ihc, height=1, width=2.5)
+```
+
+```{r}
+#1 row facet wrap, large
+bendo_ihc_large <- percs %>% ggplot(aes(x=mouse, y=perc)) +
+  geom_bar(aes(fill=layer), stat="identity", position="dodge") +
+  facet_wrap(time ~ factor(light, c("light", "dark")), scales="free_x", nrow=1, as.table=FALSE) +
+  labs(y="% of B-endorphin+ ChAT cells",
+       col="Light Condition", shape="Cell Layer") +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        text = element_text(size=16),
+        legend.key.size = unit(1, 'cm'),
+        strip.text.x = element_text(size = 16, margin = margin(0.2, 0, 0.2, 0, "cm")),
+        axis.ticks = element_blank(),
+        legend.margin=margin(0,0,0,0)) +
+  scale_fill_manual(values = c("yellow", "cornflowerblue", "grey50")) +
+  geom_text(aes(label=label), data=label, vjust="top", hjust="left", size=6)
+
+bendo_ihc_large
+
+ggsave(filename="../figures/bendo_ihc_large.png", plot=bendo_ihc_large, height=5, width=12)
+```
+
+```{r}
+#2 BY 2 FACET WRAP
+bendo_ihc_boxy <- percs %>% ggplot(aes(x=mouse, y=perc)) +
+  geom_bar(aes(fill=layer), stat="identity", position="dodge") +
+  facet_wrap(time ~ factor(light, c("light", "dark")), scales="free_x", nrow=2, as.table=TRUE) +
+  labs(y="% of B-endorphin+ ChAT cells",
+       col="Light Condition", shape="Cell Layer") +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        text = element_text(size=4),
+        plot.title = element_text(size=4, margin=margin(0,0,0,0), face = "bold"),
+        legend.key.size = unit(0.25, 'cm'),
+        strip.text.x = element_text(size = 3, margin = margin(0, 0, 0.02, 0, "cm")),
+        axis.ticks = element_blank(),
+        legend.margin=margin(0,0,0,0)) +
+  scale_fill_manual(values = c("yellow", "cornflowerblue", "grey50")) +
+  geom_text(aes(label=label), data=label, vjust="top", hjust="left", size=1)
+
+ggsave(filename="../figures/bendo_ihc_boxy.png", plot=bendo_ihc_boxy, height=4, width=4)
+```
