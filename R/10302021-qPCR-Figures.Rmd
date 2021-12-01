@@ -16,7 +16,7 @@ library(ggpubr)
 ```
 
 ```{r}
-pomc <- read.csv("C:/Users/ctber/Documents/Image-Processing-Vigh/qPCR/08202021-POMC-final.csv", fileEncoding = 'UTF-8-BOM')
+pomc <- read.csv("../data/08202021-POMC-final.csv", fileEncoding = 'UTF-8-BOM')
 pomc <- pomc %>% mutate(Time = as.factor(Time)) %>% 
   mutate(Time = fct_relevel(Time, c("8am", "4pm", "12am"))) %>%
   mutate(Time = fct_recode(Time,
@@ -34,7 +34,7 @@ pomc_stats <- tibble::tribble(
 
 pomc_plot <- ggplot(pomc, aes(x=Time, y=Relative.GE)) +
   geom_point() +
-  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5)) +
+  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5), fill="darkorange") +
   stat_summary(fun.data = mean_se, geom = "errorbar", width=.1, alpha=0.5) +
   theme_few() +
   theme(legend.position = "none") +
@@ -45,11 +45,11 @@ pomc_plot <- ggplot(pomc, aes(x=Time, y=Relative.GE)) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
   
 
-ggsave(filename="../figures/pomc_fig_w_bars.png", plot=pomc_plot, height=3, width=3)
+ggsave(filename="../figures/pomc_fig_w_bars_orange.png", plot=pomc_plot, height=3, width=3)
 ```
 
 ```{r}
-mcko <- read.csv("C:/Users/ctber/Documents/Image-Processing-Vigh/qPCR/08162021-McKO-totalret-final.csv", fileEncoding = 'UTF-8-BOM')
+mcko <- read.csv("../data/08162021-McKO-totalret-final.csv", fileEncoding = 'UTF-8-BOM')
 mcko <- mcko %>% 
   mutate(Genotype = fct_relevel(Genotype, c("WT", "McKO")))
 
@@ -62,7 +62,7 @@ mcko_stats <- tibble::tribble(
 mcko_plot <- mcko %>% 
   ggplot(aes(x=Genotype, y=Relative.GE)) +
   geom_point() +
-  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5)) +
+  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5), fill="darkorange") +
   stat_summary(fun.data = mean_se, geom = "errorbar", width=.1, alpha=0.5) +
   theme_few() +
   theme(legend.position = "none") +
@@ -72,5 +72,5 @@ mcko_plot <- mcko %>%
     y.position = 1.5, step.increase = 0.1,
     label = "p.adj") +
   scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
-ggsave(filename="../figures/mcko_fig_bars.png", plot=mcko_plot, height=4, width=3)
+ggsave(filename="../figures/mcko_fig_bars_orange.png", plot=mcko_plot, height=4, width=3)
 ```
