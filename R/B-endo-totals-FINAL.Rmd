@@ -74,19 +74,10 @@ shapiro.test(tc$perc)
 ```
 
 ```{r}
-aov <- aov(perc ~ light * time * layer, percs)
+layer_percs <- percs %>% filter(layer != "total")
+aov <- aov(perc ~ light * time * layer, layer_percs)
 summary(aov)
 TukeyHSD(aov)
-
-#three way ANOVA power calc
-#factors A=light, B=time, C=layer
-#number levels in each J=2, K=2, C=3
-#ng = J * K * L = 2*2*3 = 12
-#n = #/group * ng = 3*12 = 36
-#ndf = (J-1)*(K-1)*(L-1) = 1*1*2 = 2
-#f=0.5 is default
-#no documentation on calculating f for a 3-way ANOVA
-wp.kanova(n=36, ndf=2, f=0.5, alph=0.05, ng=12)
 ```
 
 ```{r}
