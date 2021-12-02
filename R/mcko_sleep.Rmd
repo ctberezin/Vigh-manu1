@@ -36,9 +36,9 @@ sleep_plot <- sleepdata %>% ggplot(aes(x=condition, y=mean_sleep, fill=Genotype)
        y="Time Spent Sleeping") +
   scale_y_continuous(labels = scales::percent,
                      expand = expansion(mult = c(0, 0.1))) +
-  scale_fill_manual(values = c("grey60", "grey20"))
+  scale_fill_manual(values = c("darkorange", "grey20"))
 
 
-ggsave("../figures/sleep_plot.png", plot=sleep_plot, height=5, width=8)
+ggsave("../figures/sleep_plot_orange.png", plot=sleep_plot, height=3, width=5)
 ```
 
