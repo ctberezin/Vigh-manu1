@@ -206,7 +206,7 @@ inlpointplot <- inlpointmanset %>% ggplot(aes(x=group, y=INL_perc)) +
         legend.position = "none") +
   labs(y="Inner nuclear layer") +
   scale_y_continuous(labels=function(x) paste0(x,"%"),
-                     expand = expansion(mult = c(0, 0.3)))
+                     expand = expansion(mult = c(0, 0.4)))
 
 bothpointplots <- ggarrange(inlpointplot, gclpointplot, nrow=2)
 
