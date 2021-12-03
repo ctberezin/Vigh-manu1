@@ -183,13 +183,14 @@ gclpointplot <- gclpointmanset %>% ggplot(aes(x=group, y=GCL_perc)) +
   stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5)) +
   stat_summary(fun.data = mean_se, geom = "errorbar", width=.2) +
   facet_wrap(time ~ factor(light, c("light", "dark")), scales="free_x", nrow=1, as.table=FALSE) +
-  expand_limits(y=c(0,20)) +
+  #expand_limits(y=c(0,20)) +
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x = element_blank(),
         legend.position = "none") +
   labs(y="Ganglion cell layer") +
-  scale_y_continuous(labels=function(x) paste0(x,"%"))
+  scale_y_continuous(labels=function(x) paste0(x,"%"),
+                     expand = expansion(mult = c(0, 0.4)))
 
 inlpointmanset <- plotting_manset %>% 
   mutate(mouse = fct_reorder(as.factor(mouse), INL_perc,
