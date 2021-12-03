@@ -170,6 +170,51 @@ ggsave("../figures/manova_bendo_ihc.png", plot=bothplots, width=6, height=6)
 ```
 
 
+```{r}
+#each mouse is a dot, not a bar
+plotting_manset$group <- c("1", "1", "1", "2", "2", "2", "3", "3", "3", "4", "4", "4")
+
+gclpointmanset <- plotting_manset %>% 
+  mutate(mouse = fct_reorder(as.factor(mouse), GCL_perc,
+                      .fun=max, .desc=FALSE))
+
+gclpointplot <- gclpointmanset %>% ggplot(aes(x=group, y=GCL_perc)) +
+  geom_point(size=2) +
+  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5)) +
+  stat_summary(fun.data = mean_se, geom = "errorbar", width=.2) +
+  facet_wrap(time ~ factor(light, c("light", "dark")), scales="free_x", nrow=1, as.table=FALSE) +
+  expand_limits(y=c(0,20)) +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x = element_blank(),
+        legend.position = "none") +
+  labs(y="Ganglion cell layer") +
+  scale_y_continuous(labels=function(x) paste0(x,"%"))
+
+inlpointmanset <- plotting_manset %>% 
+  mutate(mouse = fct_reorder(as.factor(mouse), INL_perc,
+                      .fun=max, .desc=FALSE))
+
+inlpointplot <- inlpointmanset %>% ggplot(aes(x=group, y=INL_perc)) +
+  geom_point(size =2) +
+  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5)) +
+  stat_summary(fun.data = mean_se, geom = "errorbar", width=.2) +
+  facet_wrap(time ~ factor(light, c("light", "dark")), scales="free_x", nrow=1, as.table=FALSE) +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x = element_blank(),
+        legend.position = "none") +
+  labs(y="Inner nuclear layer") +
+  scale_y_continuous(labels=function(x) paste0(x,"%"),
+                     expand = expansion(mult = c(0, 0.3)))
+
+bothpointplots <- ggarrange(inlpointplot, gclpointplot, nrow=2)
+
+bothpointplots <- annotate_figure(bothpointplots,
+                                  top="% of ChAT cells expressing \U03B2-endorphin")
+bothpointplots
+ggsave("../figures/manova_bendo_ihc_points.png", plot=bothpointplots, width=6, height=6)
+```
 
 
 
