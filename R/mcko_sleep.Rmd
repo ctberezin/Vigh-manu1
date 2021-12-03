@@ -1,0 +1,44 @@
+---
+title: "McKO sleep data"
+author: "CT Berezin"
+date: "12/2/2021"
+output: pdf_document
+---
+
+```{r}
+library(tidyverse)
+library(ggpubr)
+```
+
+```{r}
+#making the dataframe
+#from Nik's analysis
+Genotype <- c("McKO", "McKO", "WT", "WT")
+condition <- c("Light", "Dark", "Light", "Dark")
+ns <- c(7, 7, 9, 9)
+mean_sleep <- c(0.6520544, 0.4565667, 0.6436465, 0.3419856)
+sds <- c(0.0840014, 0.1064821, 0.0614947, 0.0661068)
+ses <- c(0.0317495, 0.0402464, 0.0204982, 0.0220356)
+
+sleepdata <- tibble(Genotype, condition, ns, mean_sleep, sds, ses)
+
+sleepdata
+```
+
+```{r}
+sleep_plot <- sleepdata %>% ggplot(aes(x=condition, y=mean_sleep, fill=Genotype)) +
+  geom_bar(stat="identity", position="dodge") +
+  geom_errorbar(stat="identity",
+                aes(ymin=mean_sleep-ses, ymax=mean_sleep+ses),
+                position=position_dodge(0.9),
+                width=0.2) +
+  labs(x="Light Condition",
+       y="Time Spent Sleeping") +
+  scale_y_continuous(labels = scales::percent,
+                     expand = expansion(mult = c(0, 0.1))) +
+  scale_fill_manual(values = c("grey60", "grey20"))
+
+
+ggsave("../figures/sleep_plot.png", plot=sleep_plot, height=3, width=5)
+```
+

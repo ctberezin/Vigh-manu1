@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ---
 title: "10302021-qpCR-Figures"
 author: "C-T Berezin"
@@ -74,3 +75,80 @@ mcko_plot <- mcko %>%
   scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
 ggsave(filename="../figures/mcko_fig_bars.png", plot=mcko_plot, height=4, width=3)
 ```
+=======
+---
+title: "10302021-qpCR-Figures"
+author: "C-T Berezin"
+date: "10/30/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(ggthemes)
+library(forcats)
+library(ggpubr)
+```
+
+```{r}
+pomc <- read.csv("../data/08202021-POMC-final.csv", fileEncoding = 'UTF-8-BOM')
+pomc <- pomc %>% mutate(Time = as.factor(Time)) %>% 
+  mutate(Time = fct_relevel(Time, c("8am", "4pm", "12am"))) %>%
+  mutate(Time = fct_recode(Time,
+                           "08:00" = "8am",
+                           "16:00" = "4pm",
+                           "00:00" = "12am")) %>% 
+  filter(Relative.GE < 3) #remove mouse with high relative GE (data not normal)
+
+#p-values from SigmaPlot
+pomc_stats <- tibble::tribble(
+  ~group1, ~group2, ~group3, ~p.adj,
+  "08:00", "16:00", "00:00", "0.865"
+)
+
+
+pomc_plot <- ggplot(pomc, aes(x=Time, y=Relative.GE)) +
+  geom_point() +
+  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5), fill="darkorange") +
+  stat_summary(fun.data = mean_se, geom = "errorbar", width=.1, alpha=0.5) +
+  theme_few() +
+  theme(legend.position = "none") +
+  labs(y="Relative Gene Expression",
+       title = "Expression of POMC mRNA") +
+  geom_bracket(xmin="08:00", xmax="00:00", label=pomc_stats$p.adj, data=pomc_stats, y.position=2.5) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
+  
+
+ggsave(filename="../figures/pomc_fig_w_bars_orange.png", plot=pomc_plot, height=3, width=3)
+```
+
+```{r}
+mcko <- read.csv("../data/08162021-McKO-totalret-final.csv", fileEncoding = 'UTF-8-BOM')
+mcko <- mcko %>% 
+  mutate(Genotype = fct_relevel(Genotype, c("WT", "McKO")))
+
+#p-values from SigmaPlot
+mcko_stats <- tibble::tribble(
+  ~group1, ~group2, ~p.adj,
+  "WT", "McKO", "<0.001"
+)
+
+mcko_plot <- mcko %>% 
+  ggplot(aes(x=Genotype, y=Relative.GE)) +
+  geom_point() +
+  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5), fill="darkorange") +
+  stat_summary(fun.data = mean_se, geom = "errorbar", width=.1, alpha=0.5) +
+  theme_few() +
+  theme(legend.position = "none") +
+  labs(y="Relative Gene Expression",
+       title="Expression of MOR mRNA") +
+  stat_pvalue_manual(mcko_stats,
+    y.position = 1.5, step.increase = 0.1,
+    label = "p.adj") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
+ggsave(filename="../figures/mcko_fig_bars_orange.png", plot=mcko_plot, height=4, width=3)
+```
+>>>>>>> 7f4c0144ed0f2e1679d3132d57c8fbe2ccbe1a1f
