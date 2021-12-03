@@ -56,26 +56,46 @@ shapiro.test(counts$total_bendo)
 ```
 
 ```{r}
+#data setup for previous anova analysis
+#also used in following shapiro tests for ease
+anovpercs <- counts %>%
+  #give one row for each GCL, INL, and total
+  #retain only the percentages, not the raw counts
+  dplyr::select(-c(GCL_chat:total_bendo)) %>% 
+  pivot_longer(GCL_perc:total_perc,
+               names_to="type",
+               values_to="perc") %>%
+  separate(type, sep="_", into=c("layer", "protein")) %>% 
+  dplyr::select(-protein) %>% 
+  mutate(layer = as.factor(layer),
+         mouse = fct_reorder(as.factor(mouse), perc,
+                              .fun=max, .desc=FALSE),
+         time = as.factor(time)) %>% 
+  filter(layer != "total")
+head(anovpercs, 3)
+```
+
+```{r}
 manset <- counts %>% dplyr::select(light:time, GCL_perc:INL_perc)
 
 #testing manova assumptions
 #multivariate normality
 #normal distribution for each combo of indep and dependent variables
-percs %>% filter(light == "light" & layer =="GCL") %>% pull(perc) %>% shapiro.test(.)
-percs %>% filter(light == "dark" & layer =="GCL") %>% pull(perc) %>% shapiro.test(.)
+anovpercs %>% filter(light == "light" & layer =="GCL") %>% pull(perc) %>% shapiro.test(.)
+anovpercs %>% filter(light == "dark" & layer =="GCL") %>% pull(perc) %>% shapiro.test(.)
 
-percs %>% filter(light == "light" & layer =="INL") %>% pull(perc) %>% shapiro.test(.)
-percs %>% filter(light == "dark" & layer =="INL") %>% pull(perc) %>% shapiro.test(.)
+anovpercs %>% filter(light == "light" & layer =="INL") %>% pull(perc) %>% shapiro.test(.)
+anovpercs %>% filter(light == "dark" & layer =="INL") %>% pull(perc) %>% shapiro.test(.)
 
-percs %>% filter(time == "day" & layer =="GCL") %>% pull(perc) %>% shapiro.test(.)
-percs %>% filter(time == "night" & layer =="GCL") %>% pull(perc) %>% shapiro.test(.)
+anovpercs %>% filter(time == "day" & layer =="GCL") %>% pull(perc) %>% shapiro.test(.)
+anovpercs %>% filter(time == "night" & layer =="GCL") %>% pull(perc) %>% shapiro.test(.)
 
-percs %>% filter(time == "day" & layer =="INL") %>% pull(perc) %>% shapiro.test(.)
-percs %>% filter(time == "night" & layer =="INL") %>% pull(perc) %>% shapiro.test(.)
+anovpercs %>% filter(time == "day" & layer =="INL") %>% pull(perc) %>% shapiro.test(.)
+anovpercs %>% filter(time == "night" & layer =="INL") %>% pull(perc) %>% shapiro.test(.)
 #all pass
 
 
-percs %>% filter(light == "light" & layer =="GCL") %>% pull(perc) %>% shapiro.test(.)
+anovpercs %>% filter(light == "light" & layer =="GCL") %>% pull(perc) %>% shapiro.test(.)
 
 #checking homogenous variance in each combo
 #null hyp is that variance is equal
@@ -121,11 +141,12 @@ gclplotmanset <- plotting_manset %>%
 gclplot <- gclplotmanset %>% ggplot(aes(x=mouse, y=GCL_perc)) +
   geom_bar(stat="identity") +
   facet_wrap(time ~ factor(light, c("light", "dark")), scales="free_x", nrow=1, as.table=FALSE) +
-  expand_limits(y=c(0,38)) +
+  expand_limits(y=c(0,20)) +
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x = element_blank()) +
-  labs(y="Ganglion cell layer")
+  labs(y="Ganglion cell layer") +
+  scale_y_continuous(labels=function(x) paste0(x,"%"))
 
 inlplotmanset <- plotting_manset %>% 
   mutate(mouse = fct_reorder(as.factor(mouse), INL_perc,
@@ -134,37 +155,24 @@ inlplotmanset <- plotting_manset %>%
 inlplot <- inlplotmanset %>% ggplot(aes(x=mouse, y=INL_perc)) +
   geom_bar(stat="identity") +
   facet_wrap(time ~ factor(light, c("light", "dark")), scales="free_x", nrow=1, as.table=FALSE) +
-  expand_limits(y=c(0,38)) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.3)),
+                     labels=function(x) paste0(x,"%")) +
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x = element_blank()) +
   labs(y="Inner nuclear layer")
 
-ggarrange(gclplot, inlplot, nrow=2)
+bothplots <- ggarrange(inlplot, gclplot, nrow=2)
+
+bothplots <- annotate_figure(bothplots, top="% of ChAT cells expressing \U03B2-endorphin")
+
+ggsave("../figures/manova_bendo_ihc.png", plot=bothplots, width=6, height=6)
 ```
 
 
 
 
 
-```{r}
-#data setup for previous anova analysis
-anovpercs <- counts %>%
-  #give one row for each GCL, INL, and total
-  #retain only the percentages, not the raw counts
-  dplyr::select(-c(GCL_chat:total_bendo)) %>% 
-  pivot_longer(GCL_perc:total_perc,
-               names_to="type",
-               values_to="perc") %>%
-  separate(type, sep="_", into=c("layer", "protein")) %>% 
-  dplyr::select(-protein) %>% 
-  mutate(layer = as.factor(layer),
-         mouse = fct_reorder(as.factor(mouse), perc,
-                              .fun=max, .desc=FALSE),
-         time = as.factor(time)) %>% 
-  filter(layer != "total")
-head(anovpercs, 3)
-```
 
 ```{r}
 aov <- aov(perc ~ light * time * layer, anovpercs)
