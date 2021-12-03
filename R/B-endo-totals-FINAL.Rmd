@@ -12,6 +12,8 @@ library(knitr)
 library(tidyverse)
 library(dplyr)
 library(WebPower)
+library(ggpubr)
+library(car)
 ```
 
 
@@ -32,6 +34,7 @@ counts <- counts %>%
   #update the classes of some columns
   mutate(mouse = as.character(mouse),
          light = factor(as.factor(light), levels=c("light", "dark")),
+         time = as.factor(time),
   #reintroduce total counts
          total_chat = GCL_chat+INL_chat,
          total_bendo = GCL_bendo+INL_bendo) %>%
@@ -40,6 +43,9 @@ counts <- counts %>%
          INL_perc=INL_bendo/INL_chat*100,
          total_perc=total_bendo/total_chat*100)
 
+```
+
+```{r}
 #checking if the cell counts are normally distributed
 shapiro.test(counts$INL_chat)
 shapiro.test(counts$INL_bendo)
@@ -47,9 +53,103 @@ shapiro.test(counts$GCL_chat)
 shapiro.test(counts$GCL_bendo)
 shapiro.test(counts$total_chat)
 shapiro.test(counts$total_bendo)
+```
+
+```{r}
+manset <- counts %>% dplyr::select(light:time, GCL_perc:INL_perc)
+
+#testing manova assumptions
+#multivariate normality
+#normal distribution for each combo of indep and dependent variables
+percs %>% filter(light == "light" & layer =="GCL") %>% pull(perc) %>% shapiro.test(.)
+percs %>% filter(light == "dark" & layer =="GCL") %>% pull(perc) %>% shapiro.test(.)
+
+percs %>% filter(light == "light" & layer =="INL") %>% pull(perc) %>% shapiro.test(.)
+percs %>% filter(light == "dark" & layer =="INL") %>% pull(perc) %>% shapiro.test(.)
+
+percs %>% filter(time == "day" & layer =="GCL") %>% pull(perc) %>% shapiro.test(.)
+percs %>% filter(time == "night" & layer =="GCL") %>% pull(perc) %>% shapiro.test(.)
+
+percs %>% filter(time == "day" & layer =="INL") %>% pull(perc) %>% shapiro.test(.)
+percs %>% filter(time == "night" & layer =="INL") %>% pull(perc) %>% shapiro.test(.)
+#all pass
 
 
-percs <- counts %>%
+percs %>% filter(light == "light" & layer =="GCL") %>% pull(perc) %>% shapiro.test(.)
+
+#checking homogenous variance in each combo
+#null hyp is that variance is equal
+car::leveneTest(manset$GCL_perc, group=manset$light)
+car::leveneTest(manset$INL_perc, group=manset$light)
+car::leveneTest(manset$GCL_perc, group=manset$time)
+car::leveneTest(manset$INL_perc, group=manset$time)
+
+
+#checking for multicollinearity
+#low values are good
+inllm <- lm(INL_perc ~ light * time, manset)
+car::vif(inllm)
+gcllm <- lm(GCL_perc ~ light * time, manset)
+car::vif(gcllm)
+
+#linearity of dep variables
+plot(manset$GCL_perc, manset$INL_perc)
+
+#good to go on manova!
+```
+
+
+```{r}
+#manova
+mantest <- manova(cbind(GCL_perc, INL_perc) ~ light * time, data=manset)
+summary(mantest)
+summary.aov(mantest)
+#light:time interaction is significant overall and for GCL and INL
+#look at comparisons through univariate models for each dep variable
+summary(gcllm)
+summary(inllm)
+```
+
+```{r}
+plotting_manset <- counts %>%
+  dplyr::select(mouse,light:time, GCL_perc:INL_perc)
+
+gclplotmanset <- plotting_manset %>% 
+  mutate(mouse = fct_reorder(as.factor(mouse), GCL_perc,
+                      .fun=max, .desc=FALSE))
+
+gclplot <- gclplotmanset %>% ggplot(aes(x=mouse, y=GCL_perc)) +
+  geom_bar(stat="identity") +
+  facet_wrap(time ~ factor(light, c("light", "dark")), scales="free_x", nrow=1, as.table=FALSE) +
+  expand_limits(y=c(0,38)) +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x = element_blank()) +
+  labs(y="Ganglion cell layer")
+
+inlplotmanset <- plotting_manset %>% 
+  mutate(mouse = fct_reorder(as.factor(mouse), INL_perc,
+                      .fun=max, .desc=FALSE))
+
+inlplot <- inlplotmanset %>% ggplot(aes(x=mouse, y=INL_perc)) +
+  geom_bar(stat="identity") +
+  facet_wrap(time ~ factor(light, c("light", "dark")), scales="free_x", nrow=1, as.table=FALSE) +
+  expand_limits(y=c(0,38)) +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x = element_blank()) +
+  labs(y="Inner nuclear layer")
+
+ggarrange(gclplot, inlplot, nrow=2)
+```
+
+
+
+
+
+```{r}
+#data setup for previous anova analysis
+anovpercs <- counts %>%
   #give one row for each GCL, INL, and total
   #retain only the percentages, not the raw counts
   dplyr::select(-c(GCL_chat:total_bendo)) %>% 
@@ -61,32 +161,15 @@ percs <- counts %>%
   mutate(layer = as.factor(layer),
          mouse = fct_reorder(as.factor(mouse), perc,
                               .fun=max, .desc=FALSE),
-         time = as.factor(time))
-head(percs, 3)
-
-#checking if the percentages are normally distributed
-gc <- percs %>% filter(layer =="GCL")
-shapiro.test(gc$perc)
-ic <- percs %>% filter(layer =="INL")
-shapiro.test(ic$perc)
-tc <- percs %>% filter(layer =="total")
-shapiro.test(tc$perc)
+         time = as.factor(time)) %>% 
+  filter(layer != "total")
+head(anovpercs, 3)
 ```
 
 ```{r}
-aov <- aov(perc ~ light * time * layer, percs)
+aov <- aov(perc ~ light * time * layer, anovpercs)
 summary(aov)
 TukeyHSD(aov)
-
-#three way ANOVA power calc
-#factors A=light, B=time, C=layer
-#number levels in each J=2, K=2, C=3
-#ng = J * K * L = 2*2*3 = 12
-#n = #/group * ng = 3*12 = 36
-#ndf = (J-1)*(K-1)*(L-1) = 1*1*2 = 2
-#f=0.5 is default
-#no documentation on calculating f for a 3-way ANOVA
-wp.kanova(n=36, ndf=2, f=0.5, alph=0.05, ng=12)
 ```
 
 ```{r}
@@ -101,7 +184,7 @@ label <- tibble(mouse = c("97", "93", "57"),
 
 ```{r}
 #1 row facet wrap, small
-bendo_ihc <- percs %>% ggplot(aes(x=mouse, y=perc)) +
+bendo_ihc <- anovpercs %>% ggplot(aes(x=mouse, y=perc)) +
   geom_bar(aes(fill=layer), stat="identity", position="dodge") +
   facet_wrap(time ~ factor(light, c("light", "dark")), scales="free_x", nrow=1, as.table=FALSE) +
   labs(y="% of B-endorphin+ ChAT cells",
@@ -123,7 +206,7 @@ ggsave(filename="../figures/bendo_ihc.png", plot=bendo_ihc, height=1, width=2.5)
 
 ```{r}
 #1 row facet wrap, large
-bendo_ihc_large <- percs %>% ggplot(aes(x=mouse, y=perc)) +
+bendo_ihc_large <- anovpercs %>% ggplot(aes(x=mouse, y=perc)) +
   geom_bar(aes(fill=layer), stat="identity", position="dodge") +
   facet_wrap(time ~ factor(light, c("light", "dark")), scales="free_x", nrow=1, as.table=FALSE) +
   labs(y="% of B-endorphin+ ChAT cells",
@@ -136,16 +219,17 @@ bendo_ihc_large <- percs %>% ggplot(aes(x=mouse, y=perc)) +
         axis.ticks = element_blank(),
         legend.margin=margin(0,0,0,0)) +
   scale_fill_manual(values = c("yellow", "cornflowerblue", "grey50")) +
-  geom_text(aes(label=label), data=label, vjust="top", hjust="left", size=6)
+  expand_limits(y=c(0,45))
+  #geom_text(aes(label=label), data=label, vjust="top", hjust="left", size=6)
 
 bendo_ihc_large
 
-ggsave(filename="../figures/bendo_ihc_large.png", plot=bendo_ihc_large, height=5, width=12)
+ggsave(filename="../figures/bendo_ihc_large_nostats.png", plot=bendo_ihc_large, height=5, width=12)
 ```
 
 ```{r}
 #2 BY 2 FACET WRAP
-bendo_ihc_boxy <- percs %>% ggplot(aes(x=mouse, y=perc)) +
+bendo_ihc_boxy <- anovpercs %>% ggplot(aes(x=mouse, y=perc)) +
   geom_bar(aes(fill=layer), stat="identity", position="dodge") +
   facet_wrap(time ~ factor(light, c("light", "dark")), scales="free_x", nrow=2, as.table=TRUE) +
   labs(y="% of B-endorphin+ ChAT cells",
