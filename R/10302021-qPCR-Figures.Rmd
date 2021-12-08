@@ -79,3 +79,43 @@ ggsave(filename="../figures/mcko_fig_bars_orange.png", plot=mcko_plot, height=4,
 ```
 
 
+```{r mor morphine}
+treatment <- c("saline", "saline", "saline", "saline",
+               "morphine", "morphine", "morphine", "morphine")
+sample_num <- c("1","2","3","4",
+                "1","2","3","4")
+rge <- c(1.025,
+         1.054,
+         1.12,
+         0.822,
+         0.677,
+         1.054,
+         0.938,
+         1.057)
+mor <- tibble(treatment, sample_num, rge)
+mor <- mor %>% 
+  mutate(treatment = fct_relevel(treatment, c("saline", "morphine")))
+
+#p-value from SigmaPlot
+mor_stats <- tibble::tribble(
+  ~group1, ~group2, ~p.adj,
+  "saline", "morphine", "0.528"
+)
+
+mor_plot <- mor %>% ggplot(aes(x=treatment, y=rge)) +
+  stat_summary(fun = 'mean', geom="bar", fill="grey40") +
+  stat_summary(fun.data = mean_se, geom = "errorbar", width=.1, alpha=0.5) +
+  geom_point() +
+  labs(title ="Expression of MOR mRNA",
+       x="",
+       y="Relative Gene Expression") +
+  theme_few() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  stat_pvalue_manual(mor_stats,
+    y.position = 1.25, step.increase = 0.1,
+    label = "p.adj")
+
+
+ggsave(filename="../figures/mor_morphine_qpcr.png", plot=mor_plot, height=4, width=3)
+```
+
