@@ -15,6 +15,9 @@ library(forcats)
 library(ggpubr)
 ```
 
+### Is POMC under circadian regulation? 
+
+
 ```{r pomc}
 pomc <- read.csv("../data/08202021-POMC-final.csv", fileEncoding = 'UTF-8-BOM')
 pomc <- pomc %>% mutate(Time = as.factor(Time)) %>% 
@@ -50,6 +53,7 @@ ggsave(filename="../figures/pomc_fig_w_bars.png", plot=pomc_plot, height=3, widt
 ```
 
 
+### McKO validation
 
 ```{r mcko}
 mcko <- read.csv("../data/08162021-McKO-totalret-final.csv", fileEncoding = 'UTF-8-BOM')
@@ -78,6 +82,7 @@ mcko_plot <- mcko %>%
 ggsave(filename="../figures/mcko_fig_bars_orange.png", plot=mcko_plot, height=4, width=3)
 ```
 
+### MOR mRNA in morphine vs saline treatment (retinas only)
 
 ```{r mor morphine}
 treatment <- c("saline", "saline", "saline", "saline",
@@ -117,5 +122,19 @@ mor_plot <- mor %>% ggplot(aes(x=treatment, y=rge)) +
 
 
 ggsave(filename="../figures/mor_morphine_qpcr.png", plot=mor_plot, height=4, width=3)
+```
+
+### p-glycoprotein (Abcb1a) expression
+
+```{r}
+pgp <- read.csv("../data/Abcb1a-qpcr-results.csv", fileEncoding = 'UTF-8-BOM')
+pgp
+
+pgp_plot <- pgp %>% ggplot(aes(x=Treatment, y=Relative.GE)) +
+  geom_point() +
+  facet_wrap(~fct_relevel(Tissue, c("retina", "hypothalamus"))) +
+  labs(y="Relative Gene Expression")
+
+ggsave(filename = "../figures/pgp_plot.png", plot = pgp_plot, height=4, width=6)
 ```
 
