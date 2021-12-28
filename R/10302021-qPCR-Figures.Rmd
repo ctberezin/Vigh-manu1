@@ -135,6 +135,19 @@ pgp_plot <- pgp %>% ggplot(aes(x=Treatment, y=Relative.GE)) +
   facet_wrap(~fct_relevel(Tissue, c("retina", "hypothalamus"))) +
   labs(y="Relative Gene Expression")
 
-ggsave(filename = "../figures/pgp_plot.png", plot = pgp_plot, height=4, width=6)
+#ggsave(filename = "../figures/pgp_plot.png", plot = pgp_plot, height=4, width=6)
+
+sal_pgp <- pgp %>% filter(Treatment == "saline")
+
+sal_pgp_plot <- sal_pgp %>%
+  ggplot(aes(x=fct_relevel(Tissue, c("retina", "hypothalamus")),
+             y=Relative.GE)) +
+  geom_boxplot() +
+  geom_point() +
+  labs(x="Tissue",
+       y="Relative Gene Expression") +
+  theme_few()
+
+ggsave(filename = "../figures/sal_pgp_plot.png", plot = sal_pgp_plot, height=4, width=3)
 ```
 
