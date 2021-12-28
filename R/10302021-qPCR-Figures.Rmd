@@ -13,6 +13,7 @@ library(ggplot2)
 library(ggthemes)
 library(forcats)
 library(ggpubr)
+library(writexl)
 ```
 
 ### Is POMC under circadian regulation? 
@@ -138,6 +139,7 @@ pgp_plot <- pgp %>% ggplot(aes(x=Treatment, y=Relative.GE)) +
 #ggsave(filename = "../figures/pgp_plot.png", plot = pgp_plot, height=4, width=6)
 
 sal_pgp <- pgp %>% filter(Treatment == "saline")
+write_xlsx(sal_pgp, "../data/saline_pgp_qRTPCR.xlsx")
 
 sal_pgp_plot <- sal_pgp %>%
   ggplot(aes(x=fct_relevel(Tissue, c("retina", "hypothalamus")),
