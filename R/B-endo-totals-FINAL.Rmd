@@ -14,8 +14,11 @@ library(dplyr)
 library(WebPower)
 library(ggpubr)
 library(car)
+library(ggthemes)
+library(viridis)
 ```
 
+## Reading in and Tidying the Data
 
 ```{r}
 counts <- read_csv("../data/B-endo-totals.csv")
@@ -42,22 +45,13 @@ counts <- counts %>%
   mutate(GCL_perc=GCL_bendo/GCL_chat*100,
          INL_perc=INL_bendo/INL_chat*100,
          total_perc=total_bendo/total_chat*100)
+counts
 
-```
-
-```{r}
-#checking if the cell counts are normally distributed
-shapiro.test(counts$INL_chat)
-shapiro.test(counts$INL_bendo)
-shapiro.test(counts$GCL_chat)
-shapiro.test(counts$GCL_bendo)
-shapiro.test(counts$total_chat)
-shapiro.test(counts$total_bendo)
 ```
 
 ```{r}
 #data setup for previous anova analysis
-#also used in following shapiro tests for ease
+#also used in manova shapiro tests for ease
 anovpercs <- counts %>%
   #give one row for each GCL, INL, and total
   #retain only the percentages, not the raw counts
@@ -72,8 +66,22 @@ anovpercs <- counts %>%
                               .fun=max, .desc=FALSE),
          time = as.factor(time)) %>% 
   filter(layer != "total")
-head(anovpercs, 3)
+head(anovpercs, 2)
 ```
+
+## Checking Normality
+
+```{r}
+#checking if the cell counts are normally distributed
+shapiro.test(counts$INL_chat)
+shapiro.test(counts$INL_bendo)
+shapiro.test(counts$GCL_chat)
+shapiro.test(counts$GCL_bendo)
+shapiro.test(counts$total_chat)
+shapiro.test(counts$total_bendo)
+```
+
+## Checking MANOVA Assumptions
 
 ```{r}
 manset <- counts %>% dplyr::select(light:time, GCL_perc:INL_perc)
@@ -118,6 +126,7 @@ plot(manset$GCL_perc, manset$INL_perc)
 #good to go on manova!
 ```
 
+## MANOVA
 
 ```{r}
 #manova
@@ -129,6 +138,8 @@ summary.aov(mantest)
 summary(gcllm)
 summary(inllm)
 ```
+
+## Plotting 
 
 ```{r}
 plotting_manset <- counts %>%
@@ -166,7 +177,6 @@ bothplots <- ggarrange(inlplot, gclplot, nrow=2)
 
 bothplots <- annotate_figure(bothplots, top="% of ChAT cells expressing \U03B2-endorphin")
 
-ggsave("../figures/manova_bendo_ihc.png", plot=bothplots, width=6, height=6)
 ```
 
 
@@ -174,33 +184,17 @@ ggsave("../figures/manova_bendo_ihc.png", plot=bothplots, width=6, height=6)
 #each mouse is a dot, not a bar
 plotting_manset$group <- c("1", "1", "1", "2", "2", "2", "3", "3", "3", "4", "4", "4")
 
-gclpointmanset <- plotting_manset %>% 
-  mutate(mouse = fct_reorder(as.factor(mouse), GCL_perc,
-                      .fun=max, .desc=FALSE))
-
-gclpointplot <- gclpointmanset %>% ggplot(aes(x=group, y=GCL_perc)) +
-  geom_point(size=2) +
-  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5)) +
-  stat_summary(fun.data = mean_se, geom = "errorbar", width=.2) +
-  facet_wrap(time ~ factor(light, c("light", "dark")), scales="free_x", nrow=1, as.table=FALSE) +
-  #expand_limits(y=c(0,20)) +
-  theme(axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        axis.ticks.x = element_blank(),
-        legend.position = "none") +
-  labs(y="Ganglion cell layer") +
-  scale_y_continuous(labels=function(x) paste0(x,"%"),
-                     expand = expansion(mult = c(0, 0.4)))
 
 inlpointmanset <- plotting_manset %>% 
   mutate(mouse = fct_reorder(as.factor(mouse), INL_perc,
                       .fun=max, .desc=FALSE))
 
 inlpointplot <- inlpointmanset %>% ggplot(aes(x=group, y=INL_perc)) +
-  geom_point(size =2) +
-  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5)) +
+  stat_summary(fun = 'mean', geom="bar") +
   stat_summary(fun.data = mean_se, geom = "errorbar", width=.2) +
+  geom_point(size =2) +
   facet_wrap(time ~ factor(light, c("light", "dark")), scales="free_x", nrow=1, as.table=FALSE) +
+  theme_hc() %+replace%
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x = element_blank(),
@@ -209,16 +203,38 @@ inlpointplot <- inlpointmanset %>% ggplot(aes(x=group, y=INL_perc)) +
   scale_y_continuous(labels=function(x) paste0(x,"%"),
                      expand = expansion(mult = c(0, 0.4)))
 
+gclpointmanset <- plotting_manset %>% 
+  mutate(mouse = fct_reorder(as.factor(mouse), GCL_perc,
+                      .fun=max, .desc=FALSE))
+
+gclpointplot <- gclpointmanset %>% ggplot(aes(x=group, y=GCL_perc)) +
+  stat_summary(fun = 'mean', geom="bar") +
+  stat_summary(fun.data = mean_se, geom = "errorbar", width=.2) +
+  geom_point(size=2) +
+  facet_wrap(time ~ factor(light, c("light", "dark")), scales="free_x", nrow=1, as.table=FALSE) +
+  #expand_limits(y=c(0,20)) +
+  theme_hc() %+replace%
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x = element_blank(),
+        legend.position = "none",
+        strip.background = element_blank(),
+        strip.text.x = element_blank()) +
+  labs(y="Ganglion cell layer") +
+  scale_y_continuous(labels=function(x) paste0(x,"%"),
+                     expand = expansion(mult = c(0, 0.4)))
+
 bothpointplots <- ggarrange(inlpointplot, gclpointplot, nrow=2)
 
 bothpointplots <- annotate_figure(bothpointplots,
                                   top="% of ChAT cells expressing \U03B2-endorphin")
 bothpointplots
-ggsave("../figures/manova_bendo_ihc_points.png", plot=bothpointplots, width=6, height=6)
+#ggsave("../figures/manova_bendo_ihc_points.png", plot=bothpointplots, width=6, height=6)
 ```
 
 
 
+### Old ANOVA analysis
 
 ```{r}
 aov <- aov(perc ~ light * time * layer, anovpercs)
