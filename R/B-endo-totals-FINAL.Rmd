@@ -145,43 +145,7 @@ summary(inllm)
 plotting_manset <- counts %>%
   dplyr::select(mouse,light:time, GCL_perc:INL_perc)
 
-gclplotmanset <- plotting_manset %>% 
-  mutate(mouse = fct_reorder(as.factor(mouse), GCL_perc,
-                      .fun=max, .desc=FALSE))
 
-gclplot <- gclplotmanset %>% ggplot(aes(x=mouse, y=GCL_perc)) +
-  geom_bar(stat="identity") +
-  facet_wrap(time ~ factor(light, c("light", "dark")), scales="free_x", nrow=1, as.table=FALSE) +
-  expand_limits(y=c(0,20)) +
-  theme(axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        axis.ticks.x = element_blank()) +
-  labs(y="Ganglion cell layer") +
-  scale_y_continuous(labels=function(x) paste0(x,"%"))
-
-inlplotmanset <- plotting_manset %>% 
-  mutate(mouse = fct_reorder(as.factor(mouse), INL_perc,
-                      .fun=max, .desc=FALSE))
-
-inlplot <- inlplotmanset %>% ggplot(aes(x=mouse, y=INL_perc)) +
-  geom_bar(stat="identity") +
-  facet_wrap(time ~ factor(light, c("light", "dark")), scales="free_x", nrow=1, as.table=FALSE) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.3)),
-                     labels=function(x) paste0(x,"%")) +
-  theme(axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        axis.ticks.x = element_blank()) +
-  labs(y="Inner nuclear layer")
-
-bothplots <- ggarrange(inlplot, gclplot, nrow=2)
-
-bothplots <- annotate_figure(bothplots, top="% of ChAT cells expressing \U03B2-endorphin")
-
-```
-
-
-```{r}
-#each mouse is a dot, not a bar
 plotting_manset$group <- c("1", "1", "1", "2", "2", "2", "3", "3", "3", "4", "4", "4")
 
 
@@ -189,47 +153,63 @@ inlpointmanset <- plotting_manset %>%
   mutate(mouse = fct_reorder(as.factor(mouse), INL_perc,
                       .fun=max, .desc=FALSE))
 
-inlpointplot <- inlpointmanset %>% ggplot(aes(x=group, y=INL_perc)) +
+inlpointplot <- inlpointmanset %>% ggplot(aes(x=group, y=INL_perc, fill=light)) +
   stat_summary(fun = 'mean', geom="bar") +
   stat_summary(fun.data = mean_se, geom = "errorbar", width=.2) +
   geom_point(size =2) +
-  facet_wrap(time ~ factor(light, c("light", "dark")), scales="free_x", nrow=1, as.table=FALSE) +
-  theme_hc() %+replace%
+  facet_wrap(time ~ factor(light, c("light", "dark")),
+             scales="free_x",
+             nrow=1,
+             as.table=FALSE) +
+  theme_bw() %+replace%
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x = element_blank(),
-        legend.position = "none") +
+        legend.position = "none",
+        panel.spacing = unit(0,"pt"),
+        plot.background = element_rect(fill = "transparent",colour = NA),
+        panel.background = element_rect(fill = "transparent",colour = NA)) +
   labs(y="Inner nuclear layer") +
   scale_y_continuous(labels=function(x) paste0(x,"%"),
-                     expand = expansion(mult = c(0, 0.4)))
+                     limits=c(0,40),
+                     expand = expansion(mult = c(0, 0.2))) +
+  scale_fill_manual(values=c("yellow", "gray70"))
+
 
 gclpointmanset <- plotting_manset %>% 
   mutate(mouse = fct_reorder(as.factor(mouse), GCL_perc,
                       .fun=max, .desc=FALSE))
 
-gclpointplot <- gclpointmanset %>% ggplot(aes(x=group, y=GCL_perc)) +
+gclpointplot <- gclpointmanset %>% ggplot(aes(x=group, y=GCL_perc, fill=light)) +
   stat_summary(fun = 'mean', geom="bar") +
   stat_summary(fun.data = mean_se, geom = "errorbar", width=.2) +
   geom_point(size=2) +
-  facet_wrap(time ~ factor(light, c("light", "dark")), scales="free_x", nrow=1, as.table=FALSE) +
-  #expand_limits(y=c(0,20)) +
-  theme_hc() %+replace%
+  facet_wrap(time ~ factor(light, c("light", "dark")),
+             scales="free_x",
+             nrow=1,
+             as.table=FALSE) +
+  theme_bw() %+replace%
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x = element_blank(),
         legend.position = "none",
         strip.background = element_blank(),
-        strip.text.x = element_blank()) +
+        strip.text.x = element_blank(),
+        panel.spacing = unit(0, "pt"),
+        plot.background = element_rect(fill = "transparent",colour = NA),
+        panel.background = element_rect(fill = "transparent",colour = NA)) +
   labs(y="Ganglion cell layer") +
   scale_y_continuous(labels=function(x) paste0(x,"%"),
-                     expand = expansion(mult = c(0, 0.4)))
+                     limits=c(0,30),
+                     expand = expansion(mult = c(0, 0))) +
+  scale_fill_manual(values=c("yellow", "gray70"))
 
 bothpointplots <- ggarrange(inlpointplot, gclpointplot, nrow=2)
 
 bothpointplots <- annotate_figure(bothpointplots,
                                   top="% of ChAT cells expressing \U03B2-endorphin")
 bothpointplots
-#ggsave("../figures/manova_bendo_ihc_points.png", plot=bothpointplots, width=6, height=6)
+ggsave("../figures/manova_bendo_ihc.png", plot=bothpointplots, width=6, height=6, bg = "transparent")
 ```
 
 
@@ -271,7 +251,7 @@ bendo_ihc <- anovpercs %>% ggplot(aes(x=mouse, y=perc)) +
   scale_fill_manual(values = c("yellow", "cornflowerblue", "grey50")) +
   geom_text(aes(label=label), data=label, vjust="top", hjust="left", size=1)
 
-ggsave(filename="../figures/bendo_ihc.png", plot=bendo_ihc, height=1, width=2.5)
+#ggsave(filename="../figures/bendo_ihc.png", plot=bendo_ihc, height=1, width=2.5)
 ```
 
 ```{r}
@@ -294,7 +274,7 @@ bendo_ihc_large <- anovpercs %>% ggplot(aes(x=mouse, y=perc)) +
 
 bendo_ihc_large
 
-ggsave(filename="../figures/bendo_ihc_large_nostats.png", plot=bendo_ihc_large, height=5, width=12)
+#ggsave(filename="../figures/bendo_ihc_large_nostats.png", plot=bendo_ihc_large, height=5, width=12)
 ```
 
 ```{r}
@@ -315,5 +295,5 @@ bendo_ihc_boxy <- anovpercs %>% ggplot(aes(x=mouse, y=perc)) +
   scale_fill_manual(values = c("yellow", "cornflowerblue", "grey50")) +
   geom_text(aes(label=label), data=label, vjust="top", hjust="left", size=1)
 
-ggsave(filename="../figures/bendo_ihc_boxy.png", plot=bendo_ihc_boxy, height=4, width=4)
+#ggsave(filename="../figures/bendo_ihc_boxy.png", plot=bendo_ihc_boxy, height=4, width=4)
 ```
