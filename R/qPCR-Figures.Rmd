@@ -64,10 +64,10 @@ pomc_ld <- pomc_ld %>% mutate(Time = as.factor(Time.of.Day),
   select(-Time.of.Day, -Light.Condition)
 
 
-pomc_ld_plot <- ggplot(pomc_ld, aes(x=Light, y=Relative.G.E.)) +
+pomc_ld_plot <- ggplot(pomc_ld, aes(x=Time, y=Relative.G.E.)) +
   geom_point() +
   theme_few() +
-  facet_wrap(~Time) +
+  facet_wrap(~Light) +
   labs(x="",
        y="Relative Gene Expression",
        title = "POMC mRNA Expression")
