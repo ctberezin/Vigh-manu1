@@ -18,9 +18,9 @@ library(writexl)
 
 ### Is POMC under circadian regulation? 
 
-```{r pomc}
-pomc <- read.csv("../data/08202021-POMC-final.csv", fileEncoding = 'UTF-8-BOM')
-pomc <- pomc %>% mutate(Time = as.factor(Time)) %>% 
+```{r pomc-circadian}
+pomc_circ <- read.csv("../data/08202021-POMC-final.csv", fileEncoding = 'UTF-8-BOM')
+pomc_circ <- pomc_circ %>% mutate(Time = as.factor(Time)) %>% 
   mutate(Time = fct_relevel(Time, c("8am", "4pm", "12am"))) %>%
   mutate(Time = fct_recode(Time,
                            "08:00" = "8am",
@@ -29,13 +29,13 @@ pomc <- pomc %>% mutate(Time = as.factor(Time)) %>%
   filter(Relative.GE < 3) #remove mouse with high relative GE (data not normal)
 
 #p-values from SigmaPlot
-pomc_stats <- tibble::tribble(
+pomc_circ_stats <- tibble::tribble(
   ~group1, ~group2, ~group3, ~p.adj,
   "08:00", "16:00", "00:00", "0.865"
 )
 
 
-pomc_plot <- ggplot(pomc, aes(x=Time, y=Relative.GE)) +
+pomc_circ_plot <- ggplot(pomc_circ, aes(x=Time, y=Relative.GE)) +
   geom_point() +
   stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5), fill="darkorange") +
   stat_summary(fun.data = mean_se, geom = "errorbar", width=.1, alpha=0.5) +
@@ -45,12 +45,42 @@ pomc_plot <- ggplot(pomc, aes(x=Time, y=Relative.GE)) +
        y="Relative Gene Expression",
        title = "Figure 3",
        subtitle = "Expression of POMC mRNA") +
-  geom_bracket(xmin="08:00", xmax="00:00", label=pomc_stats$p.adj, data=pomc_stats, y.position=2.5) +
+  geom_bracket(xmin="08:00", xmax="00:00",
+               label=pomc_circ_stats$p.adj,
+               data=pomc_circ_stats,
+               y.position=2.5) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
   
 
-ggsave(filename="../figures/pomc_fig_w_bars.png", plot=pomc_plot, height=3, width=3)
+ggsave(filename="../figures/pomc_circ.png", plot=pomc_circ_plot, height=3, width=3)
 ```
+
+### Is POMC expression light-driven?
+
+```{r pomc-light-dark}
+pomc_ld <- read.csv("../data/01142022-POMC-light-dark.csv", fileEncoding = 'UTF-8-BOM')
+pomc_ld <- pomc_ld %>% mutate(Time = as.factor(Time.of.Day),
+                        Light = as.factor(Light.Condition)) %>% 
+  select(-Time.of.Day, -Light.Condition)
+
+
+pomc_ld_plot <- ggplot(pomc_ld, aes(x=Light, y=Relative.G.E.)) +
+  geom_point() +
+  theme_few() +
+  facet_wrap(~Time) +
+  labs(x="",
+       y="Relative Gene Expression",
+       title = "POMC mRNA Expression")
+  
+
+ggsave(filename="../figures/pomc_ld_facet_by_time.png", plot=pomc_ld_plot, height=3, width=3)
+```
+
+
+
+
+
+
 
 
 ### McKO validation

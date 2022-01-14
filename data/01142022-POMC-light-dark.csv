@@ -1,0 +1,22 @@
+﻿Sample,Light Condition,Time of Day,Relative G.E.
+LD-1,light,day,2.582027915
+LD-2,light,day,2.411118603
+LD-3,light,day,2.620149942
+LD-4,light,day,0.657714607
+LD-5,light,day,0.386660469
+LN-1,light,night,1.238703318
+LN-2,light,night,1.30647414
+LN-3,light,night,0.422074831
+LN-4,light,night,1.295709203
+LN-5,light,night,1.129886664
+DD-1,dark,day,0.592145383
+DD-2,dark,day,0.372116404
+DD-3,dark,day,0.42384915
+DD-4,dark,day,1.538081404
+DD-5,dark,day,1.073217934
+DD-6,dark,day,0.888731061
+DN-1,dark,night,0.683898854
+DN-2,dark,night,0.558612682
+DN-3,dark,night,0.581203469
+DN-4,dark,night,0.163329615
+DN-5,dark,night,0.376861313
