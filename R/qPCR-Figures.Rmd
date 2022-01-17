@@ -66,8 +66,9 @@ pomc_ld <- pomc_ld %>% mutate(Time = as.factor(Time.of.Day),
   select(-Time.of.Day, -Light.Condition)
 
 
-pomc_ld_plot <- ggplot(pomc_ld, aes(x=Light, y=Relative.G.E., col=Sex)) +
-  geom_point() +
+pomc_ld_plot <- ggplot(pomc_ld, aes(x=Light, y=Relative.G.E.)) +
+  geom_point(aes(col=Sex)) +
+  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5)) +
   theme_few() +
   facet_wrap(~Time) +
   labs(x="",
