@@ -20,7 +20,8 @@ library(writexl)
 
 ```{r pomc-circadian}
 pomc_circ <- read.csv("../data/08202021-POMC-final.csv", fileEncoding = 'UTF-8-BOM')
-pomc_circ <- pomc_circ %>% mutate(Time = as.factor(Time)) %>% 
+pomc_circ <- pomc_circ %>% mutate(Time = as.factor(Time),
+                                  Sex = as.factor(Sex)) %>% 
   mutate(Time = fct_relevel(Time, c("8am", "4pm", "12am"))) %>%
   mutate(Time = fct_recode(Time,
                            "08:00" = "8am",
@@ -36,8 +37,8 @@ pomc_circ_stats <- tibble::tribble(
 
 
 pomc_circ_plot <- ggplot(pomc_circ, aes(x=Time, y=Relative.GE)) +
-  geom_point() +
-  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5), fill="darkorange") +
+  geom_point(aes(col=Sex)) +
+  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5)) +
   stat_summary(fun.data = mean_se, geom = "errorbar", width=.1, alpha=0.5) +
   theme_few() +
   theme(legend.position = "none") +
@@ -52,7 +53,7 @@ pomc_circ_plot <- ggplot(pomc_circ, aes(x=Time, y=Relative.GE)) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
   
 
-ggsave(filename="../figures/pomc_circ.png", plot=pomc_circ_plot, height=3, width=3)
+ggsave(filename="../figures/pomc_circ_sex.png", plot=pomc_circ_plot, height=3, width=3)
 ```
 
 ### Is POMC expression light-driven?
@@ -60,20 +61,22 @@ ggsave(filename="../figures/pomc_circ.png", plot=pomc_circ_plot, height=3, width
 ```{r pomc-light-dark}
 pomc_ld <- read.csv("../data/01142022-POMC-light-dark.csv", fileEncoding = 'UTF-8-BOM')
 pomc_ld <- pomc_ld %>% mutate(Time = as.factor(Time.of.Day),
-                        Light = as.factor(Light.Condition)) %>% 
+                        Light = as.factor(Light.Condition),
+                        Sex = as.factor(Sex)) %>% 
   select(-Time.of.Day, -Light.Condition)
 
 
-pomc_ld_plot <- ggplot(pomc_ld, aes(x=Time, y=Relative.G.E.)) +
+pomc_ld_plot <- ggplot(pomc_ld, aes(x=Light, y=Relative.G.E., col=Sex)) +
   geom_point() +
   theme_few() +
-  facet_wrap(~Light) +
+  facet_wrap(~Time) +
   labs(x="",
        y="Relative Gene Expression",
        title = "POMC mRNA Expression")
   
+pomc_ld_plot
 
-ggsave(filename="../figures/pomc_ld_facet_by_time.png", plot=pomc_ld_plot, height=3, width=3)
+ggsave(filename="../figures/pomc_ld_facet_by_time_sex.png", plot=pomc_ld_plot, height=3, width=3)
 ```
 
 
