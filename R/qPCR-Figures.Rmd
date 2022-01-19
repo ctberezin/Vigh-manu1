@@ -59,7 +59,7 @@ ggsave(filename="../figures/pomc_circ_sex.png", plot=pomc_circ_plot, height=3, w
 ### Is POMC expression light-driven?
 
 ```{r pomc-light-dark}
-pomc_ld <- read.csv("../data/01142022-POMC-light-dark.csv", fileEncoding = 'UTF-8-BOM')
+pomc_ld <- read.csv("../data/01142022-POMC-light-dark-add'l-samps.csv", fileEncoding = 'UTF-8-BOM')
 pomc_ld <- pomc_ld %>% mutate(Time = as.factor(Time.of.Day),
                         Light = as.factor(Light.Condition),
                         Sex = as.factor(Sex)) %>% 
@@ -68,16 +68,56 @@ pomc_ld <- pomc_ld %>% mutate(Time = as.factor(Time.of.Day),
 
 pomc_ld_plot <- ggplot(pomc_ld, aes(x=Light, y=Relative.G.E.)) +
   geom_point(aes(col=Sex)) +
-  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5)) +
   theme_few() +
   facet_wrap(~Time) +
+  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5)) +
   labs(x="",
        y="Relative Gene Expression",
-       title = "POMC mRNA Expression")
+       title = "POMC mRNA Expression") +
+  scale_alpha(guide = "none")
   
 pomc_ld_plot
 
-ggsave(filename="../figures/pomc_ld_facet_by_time_sex.png", plot=pomc_ld_plot, height=3, width=3)
+#ggsave(filename="../figures/pomc_ld_add'l.png", plot=pomc_ld_plot, height=3, width=3)
+
+t.test(Relative.G.E. ~ Sex, pomc_ld)
+
+pomc_ld_lm <- lm(Relative.G.E. ~ Sex*Light*Time, pomc_ld)
+anova(pomc_ld_lm)
+
+pomc_ld_m <- pomc_ld %>% filter(Sex == "M")
+
+pomc_ld_m_plot <- ggplot(pomc_ld_m, aes(x=Light, y=Relative.G.E.)) +
+  geom_point(aes(col=Sex)) +
+  theme_few() +
+  facet_wrap(~Time) +
+  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5)) +
+  labs(x="",
+       y="Relative Gene Expression",
+       title = "POMC mRNA Expression") +
+  scale_alpha(guide = "none")
+
+pomc_ld_m_plot
+
+pomc_ld_m_lm <- lm(Relative.G.E. ~ Light*Time, pomc_ld_m)
+anova(pomc_ld_m_lm)
+
+pomc_ld_f <- pomc_ld %>% filter(Sex == "F")
+
+pomc_ld_f_plot <- ggplot(pomc_ld_f, aes(x=Light, y=Relative.G.E.)) +
+  geom_point(aes(col=Sex)) +
+  theme_few() +
+  facet_wrap(~Time) +
+  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5)) +
+  labs(x="",
+       y="Relative Gene Expression",
+       title = "POMC mRNA Expression") +
+  scale_alpha(guide = "none")
+
+pomc_ld_f_plot
+
+pomc_ld_f_lm <- lm(Relative.G.E. ~ Light*Time, pomc_ld_f)
+anova(pomc_ld_f_lm)
 ```
 
 
