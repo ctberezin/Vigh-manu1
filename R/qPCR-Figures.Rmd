@@ -80,20 +80,25 @@ pomc_ld_plot
 
 ggsave(filename="../figures/pomc_ld_add'l.png", plot=pomc_ld_plot, height=3, width=3)
 
-t.test(Relative.G.E. ~ Sex, pomc_ld)
+shapiro.test(pomc_ld$Relative.G.E.)
+hist(pomc_ld$Relative.G.E.)
 
 pomc_ld_lm <- lm(Relative.G.E. ~ Sex*Light*Time, pomc_ld)
+
+qqnorm(pomc_ld_lm$residuals)
+qqline(pomc_ld_lm$residuals)
+
+t.test(Relative.G.E. ~ Sex, pomc_ld)
+
 anova(pomc_ld_lm)
+
 pomc_ld_av <- aov(pomc_ld_lm)
 TukeyHSD(pomc_ld_av)
+```
 
+```{r}
 #males only
 pomc_ld_m <- pomc_ld %>% filter(Sex == "M")
-
-pomc_ld_m_lm <- lm(Relative.G.E. ~ Light*Time, pomc_ld_m)
-anova(pomc_ld_m_lm)
-pomc_ld_m_av <- aov(pomc_ld_m_lm)
-TukeyHSD(pomc_ld_m_av)
 
 pomc_ld_m_plot <- ggplot(pomc_ld_m, aes(x=Light, y=Relative.G.E.)) +
   geom_point() +
@@ -113,11 +118,6 @@ ggsave(filename="../figures/pomc_ld_add'l_m_only.png", plot=pomc_ld_m_plot, heig
 
 #females only
 pomc_ld_f <- pomc_ld %>% filter(Sex == "F")
-
-pomc_ld_f_lm <- lm(Relative.G.E. ~ Light*Time, pomc_ld_f)
-anova(pomc_ld_f_lm)
-pomc_ld_f_av <- aov(pomc_ld_f_lm)
-TukeyHSD(pomc_ld_f_av)
 
 pomc_ld_f_plot <- ggplot(pomc_ld_f, aes(x=Light, y=Relative.G.E.)) +
   geom_point() +
@@ -142,7 +142,47 @@ bothpointplots
 
 
 
+### POMC circadian + light-dark
 
+```{r}
+#not all samples but properly calibrated
+pomc_gs <- read.csv("../data/01202022-POMC-circ-ld-gene-study-INCOMPLETE.csv",
+                     fileEncoding = 'UTF-8-BOM')
+pomc_gs <- pomc_gs %>% mutate(Sex = as.factor(Sex),
+                                Hour = as.factor(Hour),
+                                Time = as.factor(Time),
+                                Light = as.factor(Light))
+pomc_gs <- pomc_gs %>% mutate(Hour = fct_relevel(Hour, c("8am", "12pm", "4pm", "12am", "1am")))
+
+ggplot(pomc_gs, aes(x=Hour, y=RelativeGE)) +
+  geom_point(aes(col=Light)) +
+  theme_few() +
+  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5))
+
+shapiro.test(pomc_gs$RelativeGE)
+hist(pomc_gs$RelativeGE)
+
+pomc_gs_lm <- lm(RelativeGE ~ Sex*Light*Time, pomc_gs)
+
+qqnorm(pomc_gs_lm$residuals)
+qqline(pomc_gs_lm$residuals)
+
+#all samples but not properly calibrated
+pomc_all <- read.csv("../data/01202022-POMC-circ-ld-gene-study-NO-CALIB.csv",
+                     fileEncoding = 'UTF-8-BOM')
+pomc_all <- pomc_all %>% mutate(Sex = as.factor(Sex),
+                                Hour = as.factor(Hour),
+                                Time = as.factor(Time),
+                                Light = as.factor(Light))
+pomc_all <- pomc_all %>% mutate(Hour = fct_relevel(Hour, c("8am", "12pm", "4pm", "12am", "1am")))
+
+ggplot(pomc_all, aes(x=Hour, y=RelativeGE)) +
+  geom_point(aes(col=Light)) +
+  theme_few() +
+  facet_wrap(~Sex)
+
+shapiro.test(pomc_all$RelativeGE)
+```
 
 
 
