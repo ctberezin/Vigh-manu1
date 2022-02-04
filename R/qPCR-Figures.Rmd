@@ -7,7 +7,8 @@ output:
   html_document: default
 ---
 
-```{r}
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, error = FALSE)
 library(tidyverse)
 library(ggplot2)
 library(ggthemes)
@@ -19,7 +20,8 @@ library(writexl)
 ### Is POMC under circadian regulation? 
 
 ```{r pomc-circadian}
-pomc_circ <- read.csv("../data/08202021-POMC-final.csv", fileEncoding = 'UTF-8-BOM')
+pomc_circ <- read.csv("../data/08202021-POMC-circ-final.csv",
+                      fileEncoding = 'UTF-8-BOM')
 pomc_circ <- pomc_circ %>% mutate(Time = as.factor(Time),
                                   Sex = as.factor(Sex)) %>% 
   mutate(Time = fct_relevel(Time, c("8am", "4pm", "12am"))) %>%
@@ -52,6 +54,7 @@ pomc_circ_plot <- ggplot(pomc_circ, aes(x=Time, y=Relative.GE)) +
                y.position=2.5) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
   
+pomc_circ_plot
 
 ggsave(filename="../figures/pomc_circ_sex.png", plot=pomc_circ_plot, height=3, width=3)
 ```
@@ -81,7 +84,6 @@ pomc_ld_plot
 ggsave(filename="../figures/pomc_ld_add'l.png", plot=pomc_ld_plot, height=3, width=3)
 
 shapiro.test(pomc_ld$Relative.G.E.)
-hist(pomc_ld$Relative.G.E.)
 
 pomc_ld_lm <- lm(Relative.G.E. ~ Sex*Light*Time, pomc_ld)
 
@@ -111,8 +113,6 @@ pomc_ld_m_plot <- ggplot(pomc_ld_m, aes(x=Light, y=Relative.G.E.)) +
   scale_alpha(guide = "none") +
   scale_y_continuous(limits = c(0,4))
 
-pomc_ld_m_plot
-
 ggsave(filename="../figures/pomc_ld_add'l_m_only.png", plot=pomc_ld_m_plot, height=3, width=3)
 
 
@@ -129,9 +129,6 @@ pomc_ld_f_plot <- ggplot(pomc_ld_f, aes(x=Light, y=Relative.G.E.)) +
        title = "POMC mRNA in Females") +
   scale_alpha(guide = "none") +
   scale_y_continuous(limits = c(0,4))
-  
-
-pomc_ld_f_plot
 
 ggsave(filename="../figures/pomc_ld_add'l_f_only.png", plot=pomc_ld_f_plot, height=3, width=3)
 
@@ -141,34 +138,10 @@ bothpointplots
 ```
 
 
-
 ### POMC circadian + light-dark
 
 ```{r}
-#not all samples but properly calibrated
-pomc_gs <- read.csv("../data/01202022-POMC-circ-ld-gene-study-INCOMPLETE.csv",
-                     fileEncoding = 'UTF-8-BOM')
-pomc_gs <- pomc_gs %>% mutate(Sex = as.factor(Sex),
-                                Hour = as.factor(Hour),
-                                Time = as.factor(Time),
-                                Light = as.factor(Light))
-pomc_gs <- pomc_gs %>% mutate(Hour = fct_relevel(Hour, c("8am", "12pm", "4pm", "12am", "1am")))
-
-ggplot(pomc_gs, aes(x=Hour, y=RelativeGE)) +
-  geom_point(aes(col=Light)) +
-  theme_few() +
-  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5))
-
-shapiro.test(pomc_gs$RelativeGE)
-hist(pomc_gs$RelativeGE)
-
-pomc_gs_lm <- lm(RelativeGE ~ Sex*Light*Time, pomc_gs)
-
-qqnorm(pomc_gs_lm$residuals)
-qqline(pomc_gs_lm$residuals)
-
-#all samples but not properly calibrated
-pomc_all <- read.csv("../data/01202022-POMC-circ-ld-gene-study-NO-CALIB.csv",
+pomc_all <- read.csv("../data/02032022-POMC-circ-ld-gene-study.csv",
                      fileEncoding = 'UTF-8-BOM')
 pomc_all <- pomc_all %>% mutate(Sex = as.factor(Sex),
                                 Hour = as.factor(Hour),
@@ -176,16 +149,23 @@ pomc_all <- pomc_all %>% mutate(Sex = as.factor(Sex),
                                 Light = as.factor(Light))
 pomc_all <- pomc_all %>% mutate(Hour = fct_relevel(Hour, c("8am", "12pm", "4pm", "12am", "1am")))
 
+qqnorm(pomc_all$RelativeGE)
+qqline(pomc_all$RelativeGE)
+
+qqnorm(log2(pomc_all$RelativeGE))
+qqline(log2(pomc_all$RelativeGE))
+shapiro.test(log2(pomc_all$RelativeGE))
+
+pomc_all_lm <- lm(log2(RelativeGE) ~ Sex * Light * Time, data=pomc_all)
+plot(pomc_all_lm, which=c(1))
+pomc_all_aov <- anova(pomc_all_lm)
+pomc_all_aov
+
 ggplot(pomc_all, aes(x=Hour, y=RelativeGE)) +
   geom_point(aes(col=Light)) +
   theme_few() +
   facet_wrap(~Sex)
-
-shapiro.test(pomc_all$RelativeGE)
 ```
-
-
-
 
 ### McKO validation
 
@@ -213,6 +193,9 @@ mcko_plot <- mcko %>%
     y.position = 1.5, step.increase = 0.1,
     label = "p.adj") +
   scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
+
+mcko_plot
+
 ggsave(filename="../figures/mcko_fig_bars_orange.png", plot=mcko_plot, height=4, width=3)
 ```
 
@@ -254,6 +237,7 @@ mor_plot <- mor %>% ggplot(aes(x=treatment, y=rge)) +
     y.position = 1.25, step.increase = 0.1,
     label = "p.adj")
 
+mor_plot
 
 ggsave(filename="../figures/mor_morphine_qpcr.png", plot=mor_plot, height=4, width=3)
 ```
