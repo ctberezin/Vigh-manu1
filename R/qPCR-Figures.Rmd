@@ -161,10 +161,15 @@ plot(pomc_all_lm, which=c(1))
 pomc_all_aov <- anova(pomc_all_lm)
 pomc_all_aov
 
-ggplot(pomc_all, aes(x=Hour, y=RelativeGE)) +
+ggplot(pomc_all, aes(x=Time, y=RelativeGE)) +
   geom_point(aes(col=Light)) +
+  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5)) +
   theme_few() +
   facet_wrap(~Sex)
+
+pomc_all %>% filter(Sex == "M") %>% group_by(Time) %>% 
+  summarise(n = n(),
+            mean = mean(RelativeGE))
 ```
 
 ### McKO validation
