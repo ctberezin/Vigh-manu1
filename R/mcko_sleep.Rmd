@@ -22,7 +22,9 @@ ses <- c(0.0317495, 0.0402464, 0.0204982, 0.0220356)
 
 sleepdata <- tibble(Genotype, condition, ns, mean_sleep, sds, ses)
 
-sleepdata
+sleepdata <- sleepdata %>% 
+  mutate(Genotype = fct_relevel(Genotype, c("WT", "McKO")),
+         condition = fct_relevel(condition, c("Light", "Dark")))
 ```
 
 ```{r}
@@ -35,9 +37,13 @@ sleep_plot <- sleepdata %>% ggplot(aes(x=condition, y=mean_sleep, fill=Genotype)
   labs(x="Light Condition",
        y="Time Spent Sleeping") +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1),
-                     expand = expansion(mult = c(0, 0.1))) +
-  scale_fill_manual(values = c("grey60", "grey20"))
+                     expand = expansion(mult = c(0, 0.15))) +
+  scale_fill_manual(values = c("grey70", "grey20")) +
+  theme_bw() %+replace%
+  theme(plot.background = element_rect(fill = "transparent",colour = NA),
+        panel.background = element_rect(fill = "transparent",colour = NA))
 
+sleep_plot
 
 ggsave("../figures/sleep_plot.png", plot=sleep_plot, height=3, width=5)
 ```
@@ -56,9 +62,8 @@ sleep_plot_dark_only <- sleepdata_dark_only %>% ggplot(aes(x=Genotype, y=mean_sl
   labs(x="",
        y="Time Spent Sleeping") +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1),
-                     expand = expansion(mult = c(0, 0.1))) +
-  theme_bw()
+                     expand = expansion(mult = c(0, 0.1)))
 
 
-ggsave("../figures/sleep_plot_dark_only.png", plot=sleep_plot_dark_only, height=2, width=2.5)
+#ggsave("../figures/sleep_plot_dark_only.png", plot=sleep_plot_dark_only, height=2, width=2.5)
 ```
