@@ -162,10 +162,12 @@ pomc_all_aov <- anova(pomc_all_lm)
 pomc_all_aov
 #TukeyHSD(aov(pomc_all_lm))
 
+
 par(mfrow=c(1,2))
 
 timeplot <- ggplot(pomc_all, aes(x=Time, y=RelativeGE)) +
   geom_point(aes(col=Light)) +
+  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5)) +
   theme_few() +
   facet_wrap(~Sex) +
   stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5))
@@ -173,6 +175,10 @@ timeplot <- ggplot(pomc_all, aes(x=Time, y=RelativeGE)) +
 timeplot
 
 ggsave(filename="../figures/pomc_ld_circ_by_time.png", plot=timeplot)
+
+pomc_all %>% filter(Sex == "M") %>% group_by(Time) %>% 
+  summarise(n = n(),
+            mean = mean(RelativeGE))
 ```
 
 ### McKO validation
