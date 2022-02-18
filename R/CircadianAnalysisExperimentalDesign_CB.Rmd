@@ -1,0 +1,563 @@
+---
+title: "Circadian Analysis Experimental Design"
+author: "Nikolas Bergum"
+date: "5/8/2020"
+output:
+  word_document: default
+  pdf_document: default
+---
+### 1. Abstract
+Intrinsically photosensitive retinal ganglion cells (ipRGCs) are cells in the resident to the retina that are essential for syncrhonization of circadian rhythms in response to environmental light cues. Past work has shown that ipRGC activity is not just influenced by light, but also by retinal neuromodulators such as $\beta$-endorphin release from other cells in the retina. Exogenous opioids cause dysregulation of circadian behavior and causes an $\mu$-opioid receptor(MOR)-mediated decrease in ipRGC firing activity. To better identify the role of ipRGC MOR signalling on circadian behavior, we characeterized the circadian activity of mice lacking MORs in ipRGCs. To accomplish this, mice were implanted with a mini telemetry device to monitor their activity. The activity data was analyzed in RStudio using a Rethomics framework yielded results that suggest MOR signalling plays a role in modulating circadian behavior in the dark, but not in the light.
+
+### 2. Introduction
+Melanopsin-containing intrinsically photosensitive retinal ganglion cells (ipRGCs) are specific retinal cells that modulate circadian rythms in response to environmental light cues (Berson et al. 2002). In addition to light stimuli, ipRGCs recieve synaptic inputs from other retinal cells. We have previously shown that the mouse retina expresses $\beta$-endorphin and that mouse ipRGCs express its preferred receptor: the $\mu$-opioid receptor (MOR) (Gallegher et al. 2010, 2012). Furthermore, past findings have revealed that exogenous opioids are decrease ipRGC firing activity via an MOR-mediated mechanism (Cleymaet et al. 2019). These findings in conjunction with the observations that opioid drugs disrupt normal circadian rhythm (Dimsdale et al. 2007) points to ipRGCs as a potential target that could mediate circadian dysregulation caused by opioid analgesics.
+To better characterize the impact of MORs signalling in ipRGC modulates circadian behavior, we assessed the circadian activity of new transgenic mouse line; these transgenic mice lack ipRGC-specific MORs. 
+To characterize the circaidan behavior of these novel ipRGC-specific MOR knockout (KO) mice, we implanted mini telemetry devices into the brains of KO and control (WT) mice and recorded their activity under different light conditions. These devices recorded Activity measures each minute of a given trial period. These meausures were used to generate a more concise continuous response variable: sleep fraction. The predictor variables for this study were all categorical: phase (light or dark), Condition (WT or KO genotypes) and Cycle (light-dark (LD), light-light(LL) and dark-dark(DD)). The total number of observations (ids) in this study was 27 mouse trials. Analysis of this activity data revealed that WT mice were significantly more active than KO mice during the dark phase of the light-dark cycle. Furthermore, when we assessed the circadian activity of KO mice across three different light cycles (light-dark, light-light and dark-dark). Here, we only found a significant effect of phase, indicating that these mice retain their circadian actitity regardless of environmental light cues. These are preliminary results, but nonetheless this data suggests that MOR-mediated signalling functions to likely modulate behavior in the dark, but not in the light in mice. 
+
+### 3. Methods
+#### DSI implantable telemetry
+DSI mini telemetry device (Harvard Bioscience, Inc.) was surgically implanted such that it was able to record brain activity and movement of mice. Electrophyisological and behavioral data were transmitted to a receiver which quantitates and scores chronic data using NeuroScore.  Animals were handled with the Instiutional Animal Care and Use Committees of Colorado State University. 
+#### Data Analysis
+Data analysis was primarily done in RStudio, using excel files derived from NeuroScore output. RStudio data analysis of circadian data followed the many of the steps outlined in the Rethomics framework (Geissmann et al. 2019). 
+
+### 4. Analysis 
+#### A. Exploratory Data Analysis (EDA) 
+Activity measures were taken every minute for varying periods of time (depending on mouse and light cycle). The raw activity data over time for each mouse yielded non-parametric data that was difficult to interpret. In order perform a little more in depth data analysis, the activity data was transformed into sleep fraction for each mouse. Sleep fraction is the amount of time the mice spent not moving relative to the total time. By using this measurement, we were able to generate a parametric data set that we could analyze using a 2-way factorial ANOVA. Because we lacked some of the requisite controls, the sleep fraction data was analyzed two different ways: first, examining differences in behavior between WT and cell-specific KO in the 'normal' light-dark (LD) condition (12 hours light + 12 hours dark). Then, to better characterize our ipRGC-specific MOR KO mice, we analyzed the activity of these mice in different cycles LD, LL (lights on all the time), DD (lights off all the time); using the LD cycle as a control. Both these fitted models met the ANOVA assumptions including homoegenity of variance and a normal distribution of residuals (Figure S1 and S2). It is also worth mentioning that mice are nocturnal, so mice typically have a lower sleep fraction in the dark.  
+```{r, include = FALSE}
+library(readxl)
+library(behavr)
+library(ggetho)
+library(dplyr)
+library(zeitgebr)
+library(tidyverse)
+library(ggpubr)
+library(car)
+library(emmeans)
+library(damr)
+library(scopr)
+library(sleepr)
+library(testthat)
+library(covr)
+library(knitr)
+library(ggthemes)
+```
+
+```{r message=FALSE}
+circa <- read_excel( "../data/Animals with cycle ids adjusted.xlsx")
+#str(circa)
+#View(circa)
+circa <- subset(circa, Cycle == "LD", select = c(id, t, Activity, Condition, Cycle))
+#str(circa)
+circa$Condition <- as.factor(circa$Condition)
+circa$Cycle <- as.factor(circa$Cycle)
+#str(circa)
+circa$moving <- ifelse(circa$Activity > 0, "TRUE", "FALSE")
+mutate(circa, moving)
+circa$moving <- as.logical(circa$moving)
+circa$asleep <- ifelse(circa$Activity == 0, "TRUE", "FALSE")
+mutate(circa, asleep)
+circa$moving <- as.logical(circa$moving)
+circa$asleep <- as.logical(circa$asleep)
+#str(circa)
+circa <- as.data.table(circa)
+setkey(circa, id)
+metadata1 <- data.table(id = paste("Control LD", 1:9), Condition = c("WT"), Cycle = c("LD"))
+metadata2 <- data.table(id = paste("KO LD", 1:7), Condition = c("McKO"), Cycle = c("LD"))
+metadata2
+metadata12 <- merge(metadata1, metadata2, all = TRUE)
+metadata12
+setkey(metadata12, id)
+circadt <- behavr(circa, metadata12)
+#str(circadt)
+```
+
+#### Data visualization: WT vs cell-specific KO mice in light/dark cycle
+```{r}
+ggetho(circadt, aes(z=asleep)) +
+      stat_ld_annotations(height = 1)+
+      stat_tile_etho() 
+ggetho(circadt, aes(y=asleep, colour=Condition)) +
+      stat_pop_etho() +
+      stat_ld_annotations() +
+      facet_grid(Cycle ~ .)
+circadt[, phase := ifelse(t %% hours(24) < hours(12), "D", "L")]
+summary_circa <- 
+  rejoin(circadt[,
+           .(activity_all = mean(Activity),
+             activity_light = mean(Activity[phase == "D"]),
+             activity_dark = mean(Activity[phase == "L"])
+             ),
+           ,by=id])
+summary_circa <- melt(summary_circa, measure.vars = patterns("activity_"),
+                          variable.name = "phase", value.name = "activity")
+ggetho(circadt, aes(y=Activity, colour=Condition), time_wrap = hours(24)) +
+      stat_pop_etho() +
+      stat_ld_annotations() + scale_y_continuous(limits=c(0, 0.25)) +  ggtitle("Normal LD Cycle")
+```
+
+
+### First graphs I need! -CB
+
+```{r}
+activity_plot <- ggetho(circadt, aes(x=t, y=Activity, colour=fct_relevel(Condition, c("WT", "McKO"))), time_wrap = hours(24)) +
+       stat_pop_etho() +
+       stat_ld_annotations(height=1, alpha=0.1, outline = NA) +
+       scale_y_continuous(name = "Activity (a.u.)") +
+       scale_color_hue(name = "Genotype") + 
+       scale_fill_hue(name = "Genotype") +
+       theme_bw()
+
+activity_plot
+
+#ggsave(filename="../figures/activity_plot.png", plot=activity_plot, height=4, width=7)
+
+#Inactivity
+inactivity_plot <- ggetho(circadt, aes(y=asleep, colour=fct_relevel(Condition, c("WT", "McKO"))), time_wrap = hours(24)) +
+      stat_pop_etho() +
+      stat_ld_annotations(height=1, alpha=0.1, outline = NA) +
+      scale_y_continuous(name= "Fraction of time inactive",labels = scales::percent) +
+      scale_color_hue(name = "Genotype") + 
+      scale_fill_hue(name = "Genotype") +
+      theme_bw()
+
+inactivity_plot
+
+#ggsave(filename="../figures/inactivity_plot.png", plot=inactivity_plot, height=4, width=7)
+```
+
+```{r}
+summary_brah <- 
+  rejoin(circadt[,
+           .(sleep_fraction = mean(asleep)),
+           by=id])
+summary_brah
+ggplot(summary_brah, aes(x=Condition, y=sleep_fraction, fill= Condition)) + 
+  geom_boxplot(outlier.colour = NA) +
+  geom_jitter(alpha=.5) +
+  scale_y_continuous(name= "Fraction of time sleeping",labels = scales::percent)
+circadt[, phase := ifelse(t %% hours(24) < hours(12), "L", "D")]
+summary_guys <- 
+  rejoin(circadt[,
+           .(sleep_fraction_all = mean(asleep),
+             sleep_fraction_light = mean(asleep[phase == "L"]),
+             sleep_fraction_dark = mean(asleep[phase == "D"])
+             ),
+           ,by=id])
+ggplot(summary_guys, aes(x=Condition, y=sleep_fraction_dark, fill= Condition)) + geom_boxplot(outlier.colour = NA) +geom_jitter(alpha=.5) +
+  scale_y_continuous(name= "Fraction of time sleeping",labels = scales::percent)
+summary_melty <- melt(summary_guys, measure.vars = patterns("sleep_fraction_"),
+                          variable.name = "phase", value.name = "sleep_fraction")
+ggplot(summary_melty, aes(x=phase, y=sleep_fraction, fill=Condition)) + 
+  geom_boxplot(outlier.colour = NA) +
+  geom_jitter(alpha=.5) +
+        facet_grid(Cycle ~ .) +
+  scale_y_continuous(name= "Fraction of time sleeping",labels = scales::percent)
+summary_melty
+pairwise.wilcox.test(summary_melty[Condition=="WT", sleep_fraction_all], 
+                     summary_melty[Condition=="KO", Condition])
+model <- aov(sleep_fraction ~ Condition, summary_melty)
+summary(model)
+bout_circadt <- bout_analysis(asleep, circadt)
+bout_circadt <- bout_circadt[asleep == TRUE, -"asleep"]
+ggetho(bout_circadt, aes(y=duration / 60, colour=Condition), time_wrap = hours(24)) + 
+      stat_pop_etho() + 
+      scale_y_continuous(name= "Bout length (min)")
+bout_circadt[,
+        .(n_bouts = .N,
+          mean_bout_length = mean(duration)),
+        by=id]
+bout_circadt_second_day <- bout_circadt[t %between%  c(days(1), days(1) + hours(12))]
+bout_circadt_second_day[, t:= t - days(1)]
+bout_summaryy <- bout_circadt_second_day[,.(
+                      latency = t[1], # the first bout is at t[1] 
+                      first_bout_length = duration[1],
+                      latency_to_longest_bout = t[which.max(duration)],
+                      length_longest_bout = max(duration),
+                      n_bouts = .N,
+                      mean_bout_length = mean(duration)
+                      ),
+                      by=id]
+bout_circadt_second_day[, t:= t - days(1)]
+bout_summaryy <- bout_circadt_second_day[,.(
+                      latency = t[1], # the first bout is at t[1] 
+                      first_bout_length = duration[1],
+                      latency_to_longest_bout = t[which.max(duration)],
+                      length_longest_bout = max(duration),
+                      n_bouts = .N,
+                      mean_bout_length = mean(duration)
+                      ),
+                      by=id]
+ggplot(rejoin(bout_summaryy), aes(n_bouts, mean_bout_length, colour=Condition)) +
+    geom_point() +
+    facet_grid(Condition ~ .) + 
+    scale_x_continuous(name="Number of bouts") +
+    scale_y_continuous(name="Average bout duration (s)")
+overall_summaryy <- summary_guys[bout_summaryy]
+ggplot(overall_summaryy, aes(latency / 60, sleep_fraction_light, colour=Condition)) +
+    geom_point() +
+    geom_smooth(method="lm", alpha=.1)+
+    facet_grid(Condition ~ .)
+```
+
+
+```{r fig.height=4, fig.width=4}
+#str(circa)
+#str(circadt) #metadata table
+ggetho(circadt, aes(x=t, z=Activity)) + stat_bar_tile_etho()
+ggetho(circadt, aes(y=asleep, colour=Condition), time_wrap = hours(24)) +
+      stat_pop_etho() +
+      stat_ld_annotations() +
+      facet_grid(Cycle ~ .) +
+      scale_y_continuous(name= "Fraction of time sleeping",labels = scales::percent)
+summary_circa$Condition <- as.factor(summary_circa$Condition)
+summary_circa$phase <- as.factor(summary_circa$phase)
+summary_circaLD <- filter(summary_circa, phase != "activity_all")
+summary_circaLD
+SumStatcirca <- summarize(group_by(summary_circaLD, Condition, phase),
+n = n(),
+mean = mean(activity),
+sd = sd(activity),
+se = sd/sqrt(n))
+SumStatcirca
+qplot(x = phase, y = mean, colour = Condition, group = Condition, data = SumStatcirca) + geom_line() + geom_errorbar(aes(ymin=mean-se, ymax=mean+se))+ scale_y_continuous(name= "Activity: x-y movement")
+
+ggplot(SumStatcirca, aes(phase, mean)) + 
+geom_bar(aes(fill = Condition), stat="identity", position=position_dodge(), width=.5) + geom_errorbar(aes(ymin=mean-se, ymax=mean+se, fill = Condition), width=.2, position=position_dodge(0.47)) +
+geom_signif(y_position=c(0.08, 0.19), xmin=c(0.8, 1.8), xmax=c(1.2, 2.2),annotation=c("ns", "**"), tip_length=0) + scale_fill_manual(values = c("red", "blue")) 
+
+ModelcircaLD <- lm(activity ~ Condition*phase, data = summary_circaLD)
+Anova(ModelcircaLD, type = 3)
+options(contrasts = c("contr.sum", "contr.poly"))
+emmeans(ModelcircaLD, pairwise ~ phase|Condition)
+emmeans(ModelcircaLD, pairwise ~ Condition|phase)
+CLD(emmeans(ModelcircaLD, pairwise ~ Condition*phase))
+
+ggplot(SumStatcirca, aes(phase, mean)) + 
+geom_bar(aes(fill = Condition), stat="identity", position=position_dodge(), width=.5) + geom_errorbar(aes(ymin=mean-se, ymax=mean+se, fill = Condition), width=.2, position=position_dodge(0.47)) +
+geom_signif(y_position=c(0.08, 0.19), xmin=c(0.8, 1.8), xmax=c(1.2, 2.2),annotation=c("ns", "**"), tip_length=0) + scale_fill_manual(values = c("red", "blue"))
+```
+
+### More graphs I need! -CB
+
+```{r}
+SumStatcirca$phase <- recode_factor(SumStatcirca$phase, activity_light = "Light", activity_dark = "Dark")
+
+act_quant_plot <- ggplot(SumStatcirca, aes(phase, mean)) + 
+  geom_bar(aes(fill = fct_relevel(Condition, c("WT", "McKO"))), stat="identity", position=position_dodge(), width=.5) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se, fill = fct_relevel(Condition, c("WT", "McKO"))), width=.2, position=position_dodge(0.47)) +
+  #mcko vs wt within light condition
+  geom_signif(y_position=c(0.22, 0.125), xmin=c(1.85, 0.85), xmax=c(2.15, 1.15),annotation=c("** p=0.0018", "n.s. p=0.5867"), tip_length=0) +
+  #light vs dark within genotype
+  geom_signif(y_position=c(0.25, 0.28), xmin=c(0.85, 1.1), xmax=c(1.9, 2.15),annotation=c("**** p<0.0001", "** p=0.0014"), tip_length=0) +
+  theme_bw() + 
+  labs(fill = "Genotype",
+       x = "Phase",
+       y = "Mean Activity (a.u.)") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
+
+
+summary_circaLD <- summary_circaLD %>% 
+  mutate(phase = recode_factor(phase, activity_light = "Light", activity_dark = "Dark"))
+
+act_quant_plot <- act_quant_plot +
+  geom_point(data=summary_circaLD, aes(x=phase, y=activity, fill=fct_relevel(Condition, c("WT", "McKO"))), position = position_dodge(width = 0.47)) +
+  theme_bw()
+
+act_quant_plot
+
+ggsave(filename="../figures/activity_quantified_plot.png", plot=act_quant_plot, height=4, width=5)
+```
+
+
+
+```{r echo=FALSE, fig.height=3, fig.width=6}
+summary_melty$Condition <- as.factor(summary_melty$Condition)
+summary_melty$phase <- as.factor(summary_melty$phase)
+summary_meltyLD <- filter(summary_melty, phase != "sleep_fraction_all")
+knitr::kable(summary_meltyLD)
+SumStaty <- summarize(group_by(summary_meltyLD, Condition, phase),
+n = n(),
+mean = mean(sleep_fraction),
+sd = sd(sleep_fraction),
+se = sd/sqrt(n))
+qplot(x = phase, y = mean, colour = Condition, group = Condition, data = SumStaty) + geom_line() + geom_errorbar(aes(ymin=mean-se, ymax=mean+se))+ scale_y_continuous(name= "Fraction of time sleeping",labels = scales::percent)
+SumStaty
+```
+
+### Last graph I need? -CB
+
+```{r}
+SumStaty$phase <- recode_factor(SumStaty$phase, sleep_fraction_light = "Light", sleep_fraction_dark = "Dark")
+
+
+inact_quant_plot <- ggplot(SumStaty, aes(phase, mean)) + 
+  geom_bar(aes(fill = fct_relevel(Condition, c("WT", "McKO"))), stat="identity", position=position_dodge(), width=.5) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se, fill = fct_relevel(Condition, c("WT", "McKO"))), width=.2, position=position_dodge(0.47)) +
+  #mcko vs wt within light condition
+  geom_signif(y_position=c(0.8,0.7), xmin=c(0.85, 1.85), xmax=c(1.15, 2.15),annotation=c("n.s. p=0.8347", "** p=0.0077"), tip_length=0) +
+  #light vs dark within genotype
+  geom_signif(y_position=c(0.9, 1), xmin=c(0.85, 1.1), xmax=c(1.9, 2.15),annotation=c("**** p<0.0001", "*** p=0.0001"), tip_length=0) +
+  scale_y_continuous(name= "Fraction of time sleeping",labels = scales::percent) +
+  theme_bw() +
+  labs(fill = "Genotype",
+       x = "Phase",
+       y = "Fraction of time inactive") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1)), labels = scales::percent)
+
+summary_melty <- summary_melty %>% filter(phase != "sleep_fraction_all") %>% 
+  mutate(phase = recode_factor(phase, sleep_fraction_light = "Light", sleep_fraction_dark = "Dark"))
+
+inact_quant_plot <- inact_quant_plot +
+  geom_point(data=summary_melty, aes(x=phase, y=sleep_fraction, fill=fct_relevel(Condition, c("WT", "McKO"))), position = position_dodge(width = 0.47))
+
+inact_quant_plot
+
+ggsave(filename="../figures/inactivity_quantified_plot.png", plot=inact_quant_plot, height=4, width=5)
+```
+
+
+
+```{r}
+ggetho(circadt, aes(y=Activity, fill=Condition), time_wrap = hours(24)) +
+      stat_pop_etho() +
+      stat_ld_annotations() +
+      facet_grid(Cycle ~ .) + scale_fill_manual(values = c("red", "blue")) + geom_smooth(span=0.05)
+```
+
+#### Data Visualization: Circadian behavior of cell-specific KO mice in different light cycles
+```{r include=FALSE}
+cycles <- read_excel( "C:\\Users\\nikbe\\Documents\\Vigh Lab\\Experimental Design Project\\KO animals with cycle ids.xlsx")
+str(cycles)
+cycles <- subset(cycles, Condition == "KO", select=c(id, t, Activity, Cycle))
+cycles$moving <- ifelse(cycles$Activity > 0, "TRUE", "FALSE")
+mutate(cycles, moving)
+cycles$moving <- as.logical(cycles$moving)
+cycles$asleep <- ifelse(cycles$Activity == 0, "TRUE", "FALSE")
+mutate(cycles, asleep)
+cycles$moving <- as.logical(cycles$moving)
+cycles$asleep <- as.logical(cycles$asleep)
+str(cycles)
+cycles$Cycle <- as.factor(cycles$Cycle)
+str(cycles)
+```
+```{r include=FALSE}
+cycles <- as.data.table(cycles)
+setkey(cycles, id)
+metadata2 <- data.table(id = paste("KO LD", 1:7), Condition = c("KO"), Cycle = c("LD"))
+metadata3i <- data.table(id = paste("KO DD", 1:3) , Condition = c("KO"), Cycle = c("DD"))
+metadata3ii <- data.table(id = paste("KO DD", 5:8) , Condition = c("KO"), Cycle = c("DD"))
+metadata3 <- merge(metadata3i, metadata3ii, all=TRUE)
+metadata4 <- data.table(id = paste("KO LL", 5:8), Condition = c("KO"), Cycle = c("LL"))
+metadata34 <-merge(metadata3, metadata4, all=TRUE)
+metadata <- merge(metadata34, metadata2, all = TRUE)
+setkey(metadata, id)
+cyclesdt <- behavr(cycles, metadata)
+str(cyclesdt)
+```
+```{r}
+ggetho(cyclesdt, aes(z=asleep)) +
+      stat_ld_annotations(height = 1)+
+      stat_tile_etho() 
+ggetho(cyclesdt, aes(y=asleep, colour=Cycle)) +
+      stat_pop_etho() +
+      stat_ld_annotations() +
+      facet_grid(Cycle ~ .)
+ggetho(cyclesdt, aes(y=asleep, colour=Cycle), time_wrap = hours(24)) +
+      stat_pop_etho() +
+      stat_ld_annotations() +
+      facet_grid(Cycle ~ .) +
+      scale_y_continuous(name= "Fraction of time sleeping",labels = scales::percent)
+summary_brew <- 
+  rejoin(cyclesdt[,
+           .(sleep_fraction = mean(asleep)),
+           by=id])
+summary_brew
+ggplot(summary_brew, aes(x=Cycle, y=sleep_fraction, fill= Cycle)) + 
+  geom_boxplot(outlier.colour = NA) +
+  geom_jitter(alpha=.5) +
+  scale_y_continuous(name= "Fraction of time sleeping",labels = scales::percent)
+cyclesdt[, phase := ifelse(t %% hours(24) < hours(12), "D", "L")]
+summary_g <- 
+  rejoin(cyclesdt[,
+           .(sleep_fraction_all = mean(asleep),
+             sleep_fraction_light = mean(asleep[phase == "D"]),
+             sleep_fraction_dark = mean(asleep[phase == "L"])
+             ),
+           ,by=id])
+ggplot(summary_g, aes(x=Cycle, y=sleep_fraction_dark, fill= Cycle)) + 
+  geom_boxplot(outlier.colour = NA) +
+  geom_jitter(alpha=.5) +
+  scale_y_continuous(name= "Fraction of time sleeping",labels = scales::percent)
+summary_mel <- melt(summary_g, measure.vars = patterns("sleep_fraction_"),
+                          variable.name = "phase", value.name = "sleep_fraction")
+ggplot(summary_mel, aes(x=phase, y=sleep_fraction, fill=Cycle)) + 
+  geom_boxplot(outlier.colour = NA) +
+  geom_jitter(alpha=.5) +
+        facet_grid(Condition ~ .) +
+  scale_y_continuous(name= "Fraction of time sleeping",labels = scales::percent)
+bout_cyclesdt <- bout_analysis(asleep,cyclesdt)
+bout_cyclesdt <- bout_cyclesdt[asleep == TRUE, -"asleep"]
+ggetho(bout_cyclesdt, aes(y=duration / 60, colour=Cycle), time_wrap = hours(24)) + 
+      stat_pop_etho() + 
+      scale_y_continuous(name= "Bout length (min)")
+bout_cyclesdt[,
+        .(n_bouts = .N,
+          mean_bout_length = mean(duration)),
+        by=id]
+bout_cyclesdt_second_day <- bout_cyclesdt[t %between%  c(days(1), days(1) + hours(12))]
+bout_cyclesdt_second_day[, t:= t - days(1)]
+bout_sum <- bout_cyclesdt_second_day[,.(
+                      latency = t[1], # the first bout is at t[1] 
+                      first_bout_length = duration[1],
+                      latency_to_longest_bout = t[which.max(duration)],
+                      length_longest_bout = max(duration),
+                      n_bouts = .N,
+                      mean_bout_length = mean(duration)
+                      ),
+                      by=id]
+bout_sum
+bout_cyclesdt_second_day[, t:= t - days(1)]
+bout_sum <- bout_cyclesdt_second_day[,.(
+                      latency = t[1], # the first bout is at t[1] 
+                      first_bout_length = duration[1],
+                      latency_to_longest_bout = t[which.max(duration)],
+                      length_longest_bout = max(duration),
+                      n_bouts = .N,
+                      mean_bout_length = mean(duration)
+                      ),
+                      by=id]
+bout_sum
+ggplot(rejoin(bout_sum), aes(n_bouts, mean_bout_length, colour=Cycle)) +
+    geom_point() +
+    facet_grid(Cycle ~ .) + 
+    scale_x_continuous(name="Number of bouts") +
+    scale_y_continuous(name="Average bout duration (s)")
+overall_sum <- summary_g[bout_sum]
+overall_sum
+ggplot(overall_sum, aes(latency / 60, sleep_fraction_light, colour=Cycle)) +
+    geom_point() +
+    geom_smooth(method="lm", alpha=.1)+
+    facet_grid(Cycle ~ .)
+```
+```{r echo=FALSE, fig.height=3, fig.width=3}
+#str(cycles)
+#str(cyclesdt)
+ggetho(cyclesdt, aes(y=moving, colour=Cycle)) +
+      stat_pop_etho() +
+      stat_ld_annotations() +
+      facet_grid(Cycle ~ .)
+ggetho(cyclesdt, aes(y=asleep, colour=Cycle), time_wrap = hours(24)) +
+      stat_pop_etho() +
+      stat_ld_annotations() +
+      facet_grid(Cycle ~ .) +
+      scale_y_continuous(name= "Fraction of time sleeping",labels = scales::percent)
+```
+```{r echo=FALSE, fig.height=3, fig.width=6}
+#str(summary_mel)
+summary_mel$phase <- as.factor(summary_mel$phase)
+summary_mel$Cycle <- as.factor(summary_mel$Cycle)
+summary_melLD <- filter(summary_mel, phase != "sleep_fraction_all")
+SumStats <- summarize(group_by(summary_melLD, Cycle, phase),
+n = n(),
+mean = mean(sleep_fraction),
+sd = sd(sleep_fraction),
+se = sd/sqrt(n))
+qplot(x = phase, y = mean, colour = Cycle, group = Cycle, data = SumStats) + geom_line() + geom_errorbar(aes(ymin=mean-se, ymax=mean+se))+scale_y_continuous(name= "Fraction of time sleeping",labels = scales::percent)
+knitr::kable(SumStats)
+```
+
+#### B. Models
+
+##### WT vs. KO mice: 2(Condition) x 2(phase) Factorial Design
+Both the Condition and phase have a significant effect on sleep_fraction, and based on interaction plot above it seems there might be an interaction as well. ANOVA assumptions were satisfied; diagnostic plots and tests availble in the Appendix (Figure S1).
+```{r}
+  Modelcircad <- lm(sleep_fraction ~ Condition*phase, data = summary_meltyLD)
+Anova(Modelcircad, type = 3)
+options(contrasts = c("contr.sum", "contr.poly"))
+emmeans(Modelcircad, pairwise ~ phase|Condition)
+emmeans(Modelcircad, pairwise ~ Condition|phase)
+CLD(emmeans(Modelcircad, pairwise ~ Condition*phase))
+```
+
+###### KO mice: 2(phase) x 3(Cycle) factorial design
+This model is meant to examine how the circadian behavior of KO mice was impacted by different environmental light cycles. Previous data suggests that there may be differential modulation of ipRGCs by MOR signalling, thus we wanted to examine potential interactions between phase and light cycles. ANOVA assumptions were satisfied; diagnostic plots and tests availble in the Appendix(Figure S1).
+```{r}
+Modelcyc <- lm(sleep_fraction ~ phase*Cycle, data = summary_melLD)
+```
+
+#### C. Results
+
+##### WT vs KO Mice light dark cycle
+The results of the analysis of the WT versus cell-specific KO mice reveals significant effects of both condition and phase. The significant effect of phase was expected; yet the significant difference between the conditions (WT vs. KO) suggests that ipRGC MORs are important in modulating circadian behavior. Significantly, there is a marked increase in sleep_fraction in KO mice compared to control mice in the dark phase. Lastly, there does not appear to be a "significant" interaction between condition and phase based on the present analysis.
+```{r echo=TRUE, warning=FALSE}
+Anova(Modelcircad, type = 3)
+options(contrasts = c("contr.sum", "contr.poly"))
+emmeans(Modelcircad, pairwise ~ phase|Condition)
+emmeans(Modelcircad, pairwise ~ Condition|phase)
+CLD(emmeans(Modelcircad, pairwise ~ Condition*phase))
+```
+
+##### KO Mice across different cycles
+Results of the KO mice analysis show no significant effect of cycle. Predictably, their was still a significant main effect of phase across different cycles. There was also no interaction between phase and cycle. 
+```{r warning=FALSE}
+Anova(Modelcyc, type = 3)
+emmeans(Modelcyc, pairwise ~ phase|Cycle)
+options(contrasts = c("contr.sum", "contr.poly"))
+CLD(emmeans(Modelcyc, pairwise ~ Cycle*phase))
+```
+
+### 5. Conclusions
+The characterization of this circadian data in cell-specific KO has revealed changes in circadian behavior that may help determine the role of retinal opioid signalling in circadian regulation. Analysis of KO mice across different cycles demonstrates that the sleep fractions of these KO mice are relatively unaffected by light cycles. It is important to note that these cell-specific MOR KO mice retain there differences in overall activity across phases, despite changes in light cycle conditions. Obviously, with such a small sample size, follow-up studies (with the proper controls) would need to be conducted to confirm this. 
+The analysis of the WT vs KO in the light-dark cycle provides some evidence that MOR signalling is dependent on environmental light cues. KO mice on average are less active than their WT counterparts (evidenced by increased overall sleep fraction - Figure S3). Interestingly, KO mice are only less active during the dark phase (higher sleep fraction in dark), whereas their was no significant difference between sleep fractions of WT and KO mice in the light phase. These findings indicate that ipRGC MOR signalling plays a role in modulating circadian behavior in the dark, but not in the light. Furthermore, although there was no "significant" interaction (p = 0.07037) between condition and phase in the light-dark cycle, I would be eager to see if subequent studies yield an interaction between condition and light/dark phase. 
+
+### 6. Appendix
+
+#### ANOVA Diagnostics
+Figure S1
+```{r}
+par(mfrow=c(1,2))
+plot(Modelcircad, which=c(1,2))
+leveneTest(sleep_fraction ~ Condition*phase, data = summary_meltyLD)
+shapiro.test(resid(Modelcircad))
+```
+
+Figure S2
+```{r}
+par(mfrow=c(1,2))
+plot(Modelcyc, which=c(1,2))
+leveneTest(sleep_fraction ~ Cycle*phase, data = summary_melLD)
+shapiro.test(resid(Modelcyc))
+```
+
+#### More Figures
+Figure S3
+```{r}
+ggetho(circadt, aes(z=asleep)) +
+      stat_ld_annotations(height = 1)+
+      stat_tile_etho() 
+ggetho(cyclesdt, aes(y=asleep, colour=Cycle), time_wrap = hours(24)) +
+      stat_pop_etho() +
+      stat_ld_annotations() +
+      scale_y_continuous(name= "Fraction of time sleeping",labels = scales::percent)
+```
+
+Figure S4
+```{r fig.height=6, fig.width=6}
+ggplot(summary_melty, aes(x=phase, y=sleep_fraction, fill=Condition)) + 
+  geom_boxplot(outlier.colour = NA) +
+  geom_jitter(alpha=.5) +
+        facet_grid(Cycle ~ .) +
+  scale_y_continuous(name= "Fraction of time sleeping",labels = scales::percent)
+
+```
+
+Figure S5
+```{r}
+ggplot(summary_meltyLD, aes(x=phase, y=sleep_fraction, fill=Condition)) + 
+  geom_boxplot(outlier.colour = NA) + geom_jitter(alpha=.5) + facet_grid(Cycle ~ .) + scale_y_continuous(name= "Fraction of time sleeping",labels = scales::percent)
+ggplot(summary_melLD, aes(x=phase, y=sleep_fraction, fill = Cycle)) + 
+  geom_boxplot(outlier.colour = NA) +
+  geom_jitter(alpha=.5) +
+        facet_grid(Condition ~ .) +
+  scale_y_continuous(name= "Fraction of time sleeping",labels = scales::percent)
+```
