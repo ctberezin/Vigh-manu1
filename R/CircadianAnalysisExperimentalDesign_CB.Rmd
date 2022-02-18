@@ -103,7 +103,7 @@ ggetho(circadt, aes(y=Activity, colour=Condition), time_wrap = hours(24)) +
 ```{r}
 activity_plot <- ggetho(circadt, aes(x=t, y=Activity, colour=fct_relevel(Condition, c("WT", "McKO"))), time_wrap = hours(24)) +
        stat_pop_etho() +
-       stat_ld_annotations(height=1, alpha=0.1, outline = NA) +
+       stat_ld_annotations(height=1, alpha=0.1, outline = NA, x_limits=c(0,86400)) +
        scale_y_continuous(name = "Activity (a.u.)") +
        scale_color_hue(name = "Genotype") + 
        scale_fill_hue(name = "Genotype") +
@@ -111,23 +111,21 @@ activity_plot <- ggetho(circadt, aes(x=t, y=Activity, colour=fct_relevel(Conditi
 
 activity_plot
 
-#ggsave(filename="../figures/activity_plot.png", plot=activity_plot, height=4, width=7)
+ggsave(filename="../figures/activity_plot.png", plot=activity_plot, height=4, width=7)
 
 #Inactivity
 inactivity_plot <- ggetho(circadt, aes(y=asleep, colour=fct_relevel(Condition, c("WT", "McKO"))), time_wrap = hours(24)) +
-      theme_bw() +
-      geom_rect(xmin=84600, xmax=86375, ymin=0.15, ymax=0.8, fill="grey80", alpha=0.1, color=NA) +
       stat_pop_etho() +
-      stat_ld_annotations(height=1, alpha=0.1, outline = NA) +
+      stat_ld_annotations(height=1, alpha=0.1, outline = NA, x_limits=c(0,86400)) +
       scale_y_continuous(name= "Fraction of time inactive",
-                         labels = scales::percent,
-                         expand = expansion(mult = c(0, 0.1))) +
+                         labels = scales::percent) +
       scale_color_hue(name = "Genotype") + 
-      scale_fill_hue(name = "Genotype")
+      scale_fill_hue(name = "Genotype") +
+      theme_bw()
 
 inactivity_plot
 
-#ggsave(filename="../figures/inactivity_plot.png", plot=inactivity_plot, height=4, width=7)
+ggsave(filename="../figures/inactivity_plot.png", plot=inactivity_plot, height=4, width=7)
 ```
 
 ```{r}
