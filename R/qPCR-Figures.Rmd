@@ -203,8 +203,7 @@ mcko_plot <- mcko %>%
   theme(plot.background = element_rect(fill = "transparent",colour = NA),
         panel.background = element_rect(fill = "transparent",colour = NA),
         legend.position = "none") +
-  labs(y="Relative Gene Expression",
-       title="Expression of MOR mRNA") +
+  labs(y="Relative Gene Expression") +
   #stat_pvalue_manual(mcko_stats,
   #  y.position = 1.5, step.increase = 0.1,
   #  label = "p.adj") +

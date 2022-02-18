@@ -69,6 +69,8 @@ metadata12
 setkey(metadata12, id)
 circadt <- behavr(circa, metadata12)
 #str(circadt)
+
+median(circadt$t)
 ```
 
 #### Data visualization: WT vs cell-specific KO mice in light/dark cycle
@@ -113,12 +115,15 @@ activity_plot
 
 #Inactivity
 inactivity_plot <- ggetho(circadt, aes(y=asleep, colour=fct_relevel(Condition, c("WT", "McKO"))), time_wrap = hours(24)) +
+      theme_bw() +
+      geom_rect(xmin=84600, xmax=86375, ymin=0.15, ymax=0.8, fill="grey80", alpha=0.1, color=NA) +
       stat_pop_etho() +
       stat_ld_annotations(height=1, alpha=0.1, outline = NA) +
-      scale_y_continuous(name= "Fraction of time inactive",labels = scales::percent) +
+      scale_y_continuous(name= "Fraction of time inactive",
+                         labels = scales::percent,
+                         expand = expansion(mult = c(0, 0.1))) +
       scale_color_hue(name = "Genotype") + 
-      scale_fill_hue(name = "Genotype") +
-      theme_bw()
+      scale_fill_hue(name = "Genotype")
 
 inactivity_plot
 
@@ -297,11 +302,10 @@ inact_quant_plot <- ggplot(SumStaty, aes(phase, mean)) +
   geom_signif(y_position=c(0.8,0.7), xmin=c(0.85, 1.85), xmax=c(1.15, 2.15),annotation=c("n.s. p=0.8347", "** p=0.0077"), tip_length=0) +
   #light vs dark within genotype
   geom_signif(y_position=c(0.9, 1), xmin=c(0.85, 1.1), xmax=c(1.9, 2.15),annotation=c("**** p<0.0001", "*** p=0.0001"), tip_length=0) +
-  scale_y_continuous(name= "Fraction of time sleeping",labels = scales::percent) +
   theme_bw() +
   labs(fill = "Genotype",
        x = "Phase",
-       y = "Fraction of time inactive") +
+       y = "Mean fraction of time inactive") +
   scale_y_continuous(expand = expansion(mult = c(0, 0.1)), labels = scales::percent)
 
 summary_melty <- summary_melty %>% filter(phase != "sleep_fraction_all") %>% 
