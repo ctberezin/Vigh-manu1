@@ -101,7 +101,7 @@ summary_circa <- melt(summary_circa, measure.vars = patterns("activity_"),
 ```{r}
 activity_plot <- ggetho(circadt, aes(x=t, y=Activity, colour=fct_relevel(Condition, c("WT", "McKO"))), time_wrap = hours(24)) +
        stat_pop_etho() +
-       stat_ld_annotations(height=1, alpha=0.1, outline = NA) +
+       stat_ld_annotations(height=1, alpha=0.1, outline = NA, x_limits=c(0,86400)) +
        scale_y_continuous(name = "Activity (a.u.)") +
        scale_color_hue(name = "Genotype") + 
        scale_fill_hue(name = "Genotype") +
@@ -113,7 +113,7 @@ activity_plot
 
 inactivity_plot <- ggetho(circadt, aes(y=asleep, colour=fct_relevel(Condition, c("WT", "McKO"))), time_wrap = hours(24)) +
       stat_pop_etho() +
-      stat_ld_annotations(height=1, alpha=0.1, outline = NA) +
+      stat_ld_annotations(height=1, alpha=0.1, outline = NA, x_limits=c(0,86400)) +
       scale_y_continuous(name= "Fraction of time inactive",labels = scales::percent) +
       scale_color_hue(name = "Genotype") + 
       scale_fill_hue(name = "Genotype") +
@@ -559,4 +559,6 @@ ggplot(summary_melLD, aes(x=phase, y=sleep_fraction, fill = Cycle)) +
   geom_jitter(alpha=.5) +
         facet_grid(Condition ~ .) +
   scale_y_continuous(name= "Fraction of time sleeping",labels = scales::percent)
+
 ```
+
