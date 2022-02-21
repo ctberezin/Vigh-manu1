@@ -52,10 +52,10 @@ circa$Condition <- as.factor(circa$Condition)
 circa$Cycle <- as.factor(circa$Cycle)
 #str(circa)
 circa$moving <- ifelse(circa$Activity > 0, "TRUE", "FALSE")
-mutate(circa, moving)
+#mutate(circa, moving)
 circa$moving <- as.logical(circa$moving)
 circa$asleep <- ifelse(circa$Activity == 0, "TRUE", "FALSE")
-mutate(circa, asleep)
+#mutate(circa, asleep)
 circa$moving <- as.logical(circa$moving)
 circa$asleep <- as.logical(circa$asleep)
 #str(circa)
@@ -63,9 +63,9 @@ circa <- as.data.table(circa)
 setkey(circa, id)
 metadata1 <- data.table(id = paste("Control LD", 1:9), Condition = c("WT"), Cycle = c("LD"))
 metadata2 <- data.table(id = paste("KO LD", 1:7), Condition = c("McKO"), Cycle = c("LD"))
-metadata2
+#metadata2
 metadata12 <- merge(metadata1, metadata2, all = TRUE)
-metadata12
+#metadata12
 setkey(metadata12, id)
 circadt <- behavr(circa, metadata12)
 #str(circadt)
@@ -73,14 +73,14 @@ circadt <- behavr(circa, metadata12)
 
 #### Data visualization: WT vs cell-specific KO mice in light/dark cycle
 ```{r}
-ggetho(circadt, aes(z=asleep)) +
-      stat_ld_annotations(height = 1)+
-      stat_tile_etho() 
-ggetho(circadt, aes(y=asleep, colour=Condition)) +
-      stat_pop_etho() +
-      stat_ld_annotations() +
-      facet_grid(Cycle ~ .)
-circadt[, phase := ifelse(t %% hours(24) < hours(12), "D", "L")]
+#ggetho(circadt, aes(z=asleep)) +
+#      stat_ld_annotations(height = 1)+
+#      stat_tile_etho() 
+#ggetho(circadt, aes(y=asleep, colour=Condition)) +
+#      stat_pop_etho() +
+#      stat_ld_annotations() +
+#      facet_grid(Cycle ~ .)
+circadt <- circadt[, phase := ifelse(t %% hours(24) < hours(12), "D", "L")]
 summary_circa <- 
   rejoin(circadt[,
            .(activity_all = mean(Activity),
@@ -90,9 +90,9 @@ summary_circa <-
            ,by=id])
 summary_circa <- melt(summary_circa, measure.vars = patterns("activity_"),
                           variable.name = "phase", value.name = "activity")
-ggetho(circadt, aes(y=Activity, colour=Condition), time_wrap = hours(24)) +
-      stat_pop_etho() +
-      stat_ld_annotations() + scale_y_continuous(limits=c(0, 0.25)) +  ggtitle("Normal LD Cycle")
+#ggetho(circadt, aes(y=Activity, colour=Condition), time_wrap = hours(24)) +
+#      stat_pop_etho() +
+#      stat_ld_annotations() + scale_y_continuous(limits=c(0, 0.25)) +  ggtitle("Normal LD Cycle")
 ```
 
 
@@ -111,7 +111,6 @@ activity_plot
 
 #ggsave(filename="../figures/activity_plot.png", plot=activity_plot, height=4, width=7)
 
-#Inactivity
 inactivity_plot <- ggetho(circadt, aes(y=asleep, colour=fct_relevel(Condition, c("WT", "McKO"))), time_wrap = hours(24)) +
       stat_pop_etho() +
       stat_ld_annotations(height=1, alpha=0.1, outline = NA) +
@@ -297,7 +296,7 @@ inact_quant_plot <- ggplot(SumStaty, aes(phase, mean)) +
   geom_signif(y_position=c(0.8,0.7), xmin=c(0.85, 1.85), xmax=c(1.15, 2.15),annotation=c("n.s. p=0.8347", "** p=0.0077"), tip_length=0) +
   #light vs dark within genotype
   geom_signif(y_position=c(0.9, 1), xmin=c(0.85, 1.1), xmax=c(1.9, 2.15),annotation=c("**** p<0.0001", "*** p=0.0001"), tip_length=0) +
-  scale_y_continuous(name= "Fraction of time sleeping",labels = scales::percent) +
+  scale_y_continuous(labels = scales::percent) +
   theme_bw() +
   labs(fill = "Genotype",
        x = "Phase",
