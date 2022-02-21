@@ -124,12 +124,14 @@ inactivity_plot
 #ggsave(filename="../figures/inactivity_plot.png", plot=inactivity_plot, height=4, width=7)
 ```
 
+
+
 ```{r}
 summary_brah <- 
   rejoin(circadt[,
            .(sleep_fraction = mean(asleep)),
            by=id])
-summary_brah
+#summary_brah
 ggplot(summary_brah, aes(x=Condition, y=sleep_fraction, fill= Condition)) + 
   geom_boxplot(outlier.colour = NA) +
   geom_jitter(alpha=.5) +
