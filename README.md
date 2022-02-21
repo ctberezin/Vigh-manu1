@@ -6,4 +6,4 @@ Contains data, code, and figures for:
 - qPCR for MOR (McKO validation)
 - RNAscope for MOR (new probe)  
 - RNAscope for MOR (old probe)
-- Sleep in McKO vs WT
+- Sleep/Telemetric activity analysis in McKO vs WT
