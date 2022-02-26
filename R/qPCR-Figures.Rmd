@@ -176,9 +176,24 @@ timeplot
 
 ggsave(filename="../figures/pomc_ld_circ_by_time.png", plot=timeplot)
 
-pomc_all %>% filter(Sex == "M") %>% group_by(Time) %>% 
+m_pomc_all <- pomc_all %>% filter(Sex == "M")
+
+m_pomc_all %>% group_by(Time) %>% 
   summarise(n = n(),
             mean = mean(RelativeGE))
+
+timeplot_m <- ggplot(m_pomc_all, aes(x=Time, y=RelativeGE)) +
+  stat_summary(fun = 'mean', geom="bar", fill="gray40") +
+  geom_point(aes(col=Light), size=2) +
+  stat_summary(fun.data = mean_se, geom = "errorbar", width=.1) +
+  theme_bw() +
+  scale_color_manual(values=c("black", "yellow")) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  geom_signif(y_position=4.8, xmin=1, xmax=2, annotation="n.s.", tip_length=0.02)
+
+timeplot_m
+
+ggsave(filename="../figures/pomc_ld_circ_by_time_males.png", plot=timeplot_m, height=4, width=3)
 ```
 
 ### McKO validation
