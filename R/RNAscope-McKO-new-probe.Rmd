@@ -74,19 +74,26 @@ range(mckos_only$percent)
 #same t.test as above but using ggpubr to put p-value into geom_bracket
 stat.test <- compare_means(percent ~ genotype, data, method = "t.test")
 
+data <- data %>% 
+  mutate(genotype = fct_relevel(genotype, c("WT", "McKO")))
 
-mcko_plot <- ggplot(data, aes(genotype, percent)) +
-  geom_point(alpha=0.75) +
-  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5)) +
-  stat_summary(fun.data = mean_se, geom = "errorbar", width=.1, alpha=0.5) +
-  theme_few() +
+mcko_plot <- ggplot(data, aes(genotype, percent, fill=genotype)) +
+  stat_summary(fun = 'mean', geom="bar") +
+  stat_summary(fun.data = mean_se, geom = "errorbar", width=.1) +
+  geom_point() +
+  theme_bw() %+replace%
   theme(legend.position = "none") +
-  labs(y="% ipRGCs with MOR mRNA",
-       title = "RNAscope labeling of MOR mRNA") +
-  geom_bracket(
-    aes(xmin = "WT", xmax = "McKO", label = signif(p, 2)),
-    data = stat.test, y.position = 110) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
+  labs(x="Genotype",
+       y="% ipRGCs with MOR mRNA") +
+#  geom_bracket(
+#    aes(xmin = "WT", xmax = "McKO", label = signif(p, 2)),
+#    data = stat.test, y.position = 110) +
+  geom_signif(y_position=109, xmin=1, xmax=2, annotation="***", tip_length=0.02) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1)),
+                     labels = function(x) paste0(x, "%"),
+                     breaks = seq(0, 100, by = 25))
 
-#ggsave(filename="../figures/RNAscope_McKO.png", plot=mcko_plot, height=3, width=3)
+mcko_plot
+
+ggsave(filename="../figures/RNAscope_McKO.png", plot=mcko_plot, height=4, width=3)
 ```
