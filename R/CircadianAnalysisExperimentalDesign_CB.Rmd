@@ -247,9 +247,9 @@ act_quant_plot <- ggplot(SumStatcirca, aes(phase, mean)) +
   geom_bar(aes(fill = fct_relevel(Condition, c("WT", "McKO"))), stat="identity", position=position_dodge(), width=.5) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se, fill = fct_relevel(Condition, c("WT", "McKO"))), width=.2, position=position_dodge(0.47)) +
   #mcko vs wt within light condition
-  geom_signif(y_position=c(0.22, 0.125), xmin=c(1.85, 0.85), xmax=c(2.15, 1.15),annotation=c("** p=0.0018", "n.s. p=0.5867"), tip_length=0) +
+  geom_signif(y_position=c(0.23, 0.135), xmin=c(1.85, 0.85), xmax=c(2.15, 1.15),annotation=c("**", "n.s."), tip_length=0.02) +
   #light vs dark within genotype
-  geom_signif(y_position=c(0.25, 0.28), xmin=c(0.85, 1.1), xmax=c(1.9, 2.15),annotation=c("**** p<0.0001", "** p=0.0014"), tip_length=0) +
+  geom_signif(y_position=c(0.26, 0.29), xmin=c(0.85, 1.1), xmax=c(1.9, 2.15),annotation=c("****", "**"), tip_length=0.02) +
   theme_bw() + 
   labs(fill = "Genotype",
        x = "Phase",
@@ -295,9 +295,9 @@ inact_quant_plot <- ggplot(SumStaty, aes(phase, mean)) +
   geom_bar(aes(fill = fct_relevel(Condition, c("WT", "McKO"))), stat="identity", position=position_dodge(), width=.5) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se, fill = fct_relevel(Condition, c("WT", "McKO"))), width=.2, position=position_dodge(0.47)) +
   #mcko vs wt within light condition
-  geom_signif(y_position=c(0.8,0.7), xmin=c(0.85, 1.85), xmax=c(1.15, 2.15),annotation=c("n.s. p=0.8347", "** p=0.0077"), tip_length=0) +
+  geom_signif(y_position=c(0.85,0.7), xmin=c(0.85, 1.85), xmax=c(1.15, 2.15),annotation=c("n.s.", "**"), tip_length=0.02) +
   #light vs dark within genotype
-  geom_signif(y_position=c(0.9, 1), xmin=c(0.85, 1.1), xmax=c(1.9, 2.15),annotation=c("**** p<0.0001", "*** p=0.0001"), tip_length=0) +
+  geom_signif(y_position=c(0.95, 1.05), xmin=c(0.85, 1.1), xmax=c(1.9, 2.15),annotation=c("****", "***"), tip_length=0.02) +
   scale_y_continuous(labels = scales::percent) +
   theme_bw() +
   labs(fill = "Genotype",
