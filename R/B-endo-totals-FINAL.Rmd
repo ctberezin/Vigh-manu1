@@ -47,6 +47,8 @@ counts <- counts %>%
          total_perc=total_bendo/total_chat*100)
 counts
 
+t.test(INL_perc ~ sex, data=counts)
+t.test(GCL_perc ~ sex, data=counts)
 ```
 
 ```{r}
@@ -138,6 +140,7 @@ summary.aov(mantest)
 summary(gcllm)
 summary(inllm)
 ```
+
 
 ## Plotting 
 
