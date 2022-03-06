@@ -47,6 +47,8 @@ counts <- counts %>%
          total_perc=total_bendo/total_chat*100)
 counts
 
+t.test(INL_perc ~ sex, data=counts)
+t.test(GCL_perc ~ sex, data=counts)
 ```
 
 ```{r}
@@ -285,6 +287,7 @@ emmeans::emmeans(gcllm, pairwise ~ light * time, adjust="none")$contrasts
 emmeans::emmeans(gcllm, dunnett ~ light * time)$contrasts
 emmeans::emmeans(gcllm, pairwise ~ light * time)$contrasts
 ```
+
 
 ## Plotting 
 

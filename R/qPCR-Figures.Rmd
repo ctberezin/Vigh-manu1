@@ -162,6 +162,28 @@ pomc_all_aov <- anova(pomc_all_lm)
 pomc_all_aov
 #TukeyHSD(aov(pomc_all_lm))
 
+#but can we actually group all timepoints within day and night
+day_pomc_all  <- pomc_all %>% filter(Time == "day")
+qqnorm(day_pomc_all$RelativeGE)
+qqline(day_pomc_all$RelativeGE)
+
+qqnorm(log2(day_pomc_all$RelativeGE))
+qqline(log2(day_pomc_all$RelativeGE))
+shapiro.test(log2(day_pomc_all$RelativeGE))
+day_pomc_lm <- lm(log2(RelativeGE) ~ Hour, data=day_pomc_all)
+anova(day_pomc_lm)
+
+night_pomc_all  <- pomc_all %>% filter(Time == "night")
+qqnorm(night_pomc_all$RelativeGE)
+qqline(night_pomc_all$RelativeGE)
+
+qqnorm(log2(night_pomc_all$RelativeGE))
+qqline(log2(night_pomc_all$RelativeGE))
+shapiro.test(log2(night_pomc_all$RelativeGE))
+night_pomc_lm <- lm(log2(RelativeGE) ~ Hour, data=night_pomc_all)
+anova(night_pomc_lm)
+t.test(RelativeGE ~ Hour, data=night_pomc_all)
+#indeed
 
 par(mfrow=c(1,2))
 
