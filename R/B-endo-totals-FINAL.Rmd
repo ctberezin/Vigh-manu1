@@ -47,6 +47,7 @@ counts <- counts %>%
          total_perc=total_bendo/total_chat*100)
 counts
 
+t.test(total_perc ~ sex, data=counts)
 t.test(INL_perc ~ sex, data=counts)
 t.test(GCL_perc ~ sex, data=counts)
 ```
