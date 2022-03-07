@@ -35,7 +35,7 @@ counts <- counts %>%
         INL_chat = INLchat,
         INL_bendo = INLbendo) %>%
   #update the classes of some columns
-  mutate(mouse = as.character(mouse),
+  mutate(mouse = as.factor(mouse),
          light = factor(as.factor(light), levels=c("light", "dark")),
          time = as.factor(time),
   #reintroduce total counts
@@ -51,6 +51,151 @@ t.test(total_perc ~ sex, data=counts)
 t.test(INL_perc ~ sex, data=counts)
 t.test(GCL_perc ~ sex, data=counts)
 ```
+
+```{r}
+#manova for ChAT cells per mm2
+counts <- counts %>% mutate(
+  GCL_chat_mm = GCL_chat/Area,
+  GCL_bendo_mm = GCL_bendo/Area,
+  INL_chat_mm = INL_chat/Area,
+  INL_bendo_mm = INL_bendo/Area
+)
+
+counts_temp <- counts %>% filter(!is.na(GCL_chat_mm))
+
+counts_temp %>% group_by(light, time) %>%  summarise(
+  min_INL_chat_mm = min(INL_chat_mm),
+  mean_INL_chat_mm = mean(INL_chat_mm),
+  max_INL_chat_mm = max(INL_chat_mm),
+  min_GCL_chat_mm = min(GCL_chat_mm),
+  mean_GCL_chat_mm = mean(GCL_chat_mm),
+  max_GCL_chat_mm = max(GCL_chat_mm)
+)
+
+shapiro.test(counts_temp$GCL_chat_mm)
+shapiro.test(counts_temp$INL_chat_mm)
+
+counts_temp_long <- counts_temp %>%
+  #give one row for each GCL, INL, and total
+  #retain only the percentages, not the raw counts
+  dplyr::select(-c(GCL_chat:INL_bendo, total_chat:total_perc)) %>% 
+  pivot_longer(GCL_chat_mm:INL_bendo_mm,
+               names_to="type",
+               values_to="cells_mm") %>%
+  separate(type, sep="_", into=c("layer", "protein", "size")) %>% 
+  dplyr::select(-size) %>% 
+  mutate(layer = as.factor(layer),
+         protein = as.factor(protein))
+
+#testing manova assumptions
+#multivariate normality
+#normal distribution for each combo of indep and dependent variables
+counts_temp_long %>% filter(layer =="GCL" & protein == "chat" & time == "day") %>% pull(cells_mm) %>% shapiro.test(.)
+counts_temp_long %>% filter(layer =="GCL" & protein == "chat" & time == "night") %>% pull(cells_mm) %>% shapiro.test(.)
+counts_temp_long %>% filter(layer =="INL" & protein == "chat" & time == "day") %>% pull(cells_mm) %>% shapiro.test(.)
+counts_temp_long %>% filter(layer =="INL" & protein == "chat" & time == "night") %>% pull(cells_mm) %>% shapiro.test(.)
+
+counts_temp_long %>% filter(layer =="GCL" & protein == "chat" & light == "light") %>% pull(cells_mm) %>% shapiro.test(.)
+counts_temp_long %>% filter(layer =="GCL" & protein == "chat" & light == "dark") %>% pull(cells_mm) %>% shapiro.test(.)
+#re-run with last sample
+counts_temp_long %>% filter(layer =="INL" & protein == "chat" & time == "light") %>% pull(cells_mm) %>% shapiro.test(.)
+counts_temp_long %>% filter(layer =="INL" & protein == "chat" & time == "dark") %>% pull(cells_mm) %>% shapiro.test(.)
+
+#checking homogenous variance in each combo
+car::leveneTest(counts_temp$GCL_chat_mm, group=counts_temp$light)
+car::leveneTest(counts_temp$INL_chat_mm, group=counts_temp$light)
+car::leveneTest(counts_temp$GCL_chat_mm, group=counts_temp$time)
+car::leveneTest(counts_temp$INL_chat_mm, group=counts_temp$time)
+
+#checking for multicollinearity
+#low values are good
+inllm <- lm(INL_chat_mm ~ light * time, counts_temp)
+car::vif(inllm)
+gcllm <- lm(GCL_chat_mm ~ light * time, counts_temp)
+car::vif(gcllm)
+
+#linearity of dep variables
+plot(counts_temp$GCL_chat_mm, counts_temp$INL_chat_mm)
+abline(150,1)
+
+#good to go on manova!
+
+#manova
+mantest <- manova(cbind(GCL_chat_mm, INL_chat_mm) ~ light * time, data=counts_temp)
+summary(mantest)
+summary.aov(mantest)
+#light:time interaction is significant overall and for GCL and INL
+#look at comparisons through univariate models for each dep variable
+anova(gcllm)
+anova(inllm)
+```
+
+```{r}
+#manova for bendo cells per mm2
+counts_temp %>% group_by(light, time) %>% summarise(
+  min_INL_bendo_mm = min(INL_bendo_mm),
+  mean_INL_bendo_mm = mean(INL_bendo_mm),
+  max_INL_bendo_mm = max(INL_bendo_mm),
+  min_GCL_bendo_mm = min(GCL_bendo_mm),
+  mean_GCL_bendo_mm = mean(GCL_bendo_mm),
+  max_GCL_bendo_mm = max(GCL_bendo_mm)
+)
+
+shapiro.test(counts_temp$GCL_bendo_mm)
+shapiro.test(counts_temp$INL_bendo_mm)
+
+#testing manova assumptions
+#multivariate normality
+#normal distribution for each combo of indep and dependent variables
+counts_temp_long %>% filter(layer =="GCL" & protein == "bendo" & time == "day") %>% pull(cells_mm) %>% shapiro.test(.)
+counts_temp_long %>% filter(layer =="GCL" & protein == "bendo" & time == "night") %>% pull(cells_mm) %>% shapiro.test(.)
+counts_temp_long %>% filter(layer =="INL" & protein == "bendo" & time == "day") %>% pull(cells_mm) %>% shapiro.test(.)
+counts_temp_long %>% filter(layer =="INL" & protein == "bendo" & time == "night") %>% pull(cells_mm) %>% shapiro.test(.)
+
+counts_temp_long %>% filter(layer =="GCL" & protein == "bendo" & light == "light") %>% pull(cells_mm) %>% shapiro.test(.)
+counts_temp_long %>% filter(layer =="GCL" & protein == "bendo" & light == "dark") %>% pull(cells_mm) %>% shapiro.test(.)
+#re-run with last sample
+counts_temp_long %>% filter(layer =="INL" & protein == "bendo" & time == "light") %>% pull(cells_mm) %>% shapiro.test(.)
+counts_temp_long %>% filter(layer =="INL" & protein == "bendo" & time == "dark") %>% pull(cells_mm) %>% shapiro.test(.)
+
+#checking homogenous variance in each combo
+car::leveneTest(counts_temp$GCL_bendo_mm, group=counts_temp$light)
+car::leveneTest(counts_temp$INL_bendo_mm, group=counts_temp$light)
+car::leveneTest(counts_temp$GCL_bendo_mm, group=counts_temp$time)
+car::leveneTest(counts_temp$INL_bendo_mm, group=counts_temp$time)
+
+#checking for multicollinearity
+#low values are good
+inl_bendo_lm <- lm(INL_bendo_mm ~ light * time, counts_temp)
+car::vif(inl_bendo_lm)
+gcl_bendo_lm <- lm(GCL_bendo_mm ~ light * time, counts_temp)
+car::vif(gcl_bendo_lm)
+
+#linearity of dep variables
+plot(counts_temp$GCL_bendo_mm, counts_temp$INL_bendo_mm)
+abline(25,2)
+
+#good to go on manova!
+
+#manova
+man_bendo_test <- manova(cbind(GCL_bendo_mm, INL_bendo_mm) ~ light * time, data=counts_temp)
+summary(man_bendo_test)
+summary.aov(man_bendo_test)
+#light:time interaction is just about significant overall and for GCL and INL
+#look at comparisons through univariate models for each dep variable
+anova(gcl_bendo_lm)
+summary(gcl_bendo_lm)
+anova(inl_bendo_lm)
+summary(inl_bendo_lm)
+emmeans::emmeans(gcl_bendo_lm, pairwise ~ light * time, adjust="none")$contrasts
+emmeans::emmeans(gcl_bendo_lm, dunnett ~ light * time)$contrasts
+emmeans::emmeans(gcl_bendo_lm, pairwise ~ light * time)$contrasts
+
+emmeans::emmeans(inl_bendo_lm, pairwise ~ light * time, adjust="none")$contrasts
+emmeans::emmeans(inl_bendo_lm, dunnett ~ light * time)$contrasts
+emmeans::emmeans(inl_bendo_lm, pairwise ~ light * time)$contrasts
+```
+
 
 ```{r}
 #data setup for previous anova analysis
@@ -106,8 +251,6 @@ anovpercs %>% filter(time == "night" & layer =="INL") %>% pull(perc) %>% shapiro
 #all pass
 
 
-anovpercs %>% filter(light == "light" & layer =="GCL") %>% pull(perc) %>% shapiro.test(.)
-
 #checking homogenous variance in each combo
 #null hyp is that variance is equal
 car::leveneTest(manset$GCL_perc, group=manset$light)
@@ -140,6 +283,10 @@ summary.aov(mantest)
 #look at comparisons through univariate models for each dep variable
 summary(gcllm)
 summary(inllm)
+
+emmeans::emmeans(gcllm, pairwise ~ light * time, adjust="none")$contrasts
+emmeans::emmeans(gcllm, dunnett ~ light * time)$contrasts
+emmeans::emmeans(gcllm, pairwise ~ light * time)$contrasts
 ```
 
 
