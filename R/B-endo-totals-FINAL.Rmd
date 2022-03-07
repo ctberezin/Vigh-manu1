@@ -394,41 +394,20 @@ power.anova.test(groups=4, n=3, between.var=278.1516,
 ```{r}
 summary_table <- counts %>% group_by(light, time) %>% 
   summarise(n = n(),
-            "Mean # ChAT+ counted in INL" = mean(INL_chat),
             "Total # ChAT+ counted in INL" = sum(INL_chat),
-            "Mean # B-endo+ counted in INL" = mean(INL_bendo),
             "Total # B-endo+ counted in INL" = sum(INL_bendo),
-            "Mean ChAT+ cells in INL/mm2" = mean(INL_chat_mm),
-            "Range ChAT+ cells in INL/mm2" = paste(round(min(INL_chat_mm), 0),
-                                                   round(max(INL_chat_mm), 0),
-                                                   sep=" - "),
-            "Mean B-endo+ cells in INL/mm2" = mean(INL_bendo_mm),
-            "Range B-endo+ cells in INL/mm2" = paste(round(min(INL_bendo_mm), 0),
-                                                     round(max(INL_bendo_mm), 0),
-                                                     sep=" - "),
-            "Mean % B-endo+/ChAT+ in INL/mm2" = mean(inl_perc_mm),
-            "Range % B-endo+/ChAT+ in INL/mm2" = paste(round(min(inl_perc_mm), 0),
-                                                       round(max(inl_perc_mm), 0),
-                                                       sep=" - "),
-            "Mean # ChAT+ counted in GCL" = mean(GCL_chat),
+            "Mean ChAT+ cells in INL/mm2" = paste0(round(mean(INL_chat_mm), 0),
+                                                   "±", round(sd(INL_chat_mm),0)),
+            "Mean B-endo+ cells in INL/mm2" = paste0(round(mean(INL_bendo_mm), 0),
+                                                   "±", round(sd(INL_bendo_mm),0)),
             "Total # ChAT+ counted in GCL" = sum(GCL_chat),
-            "Mean # B-endo+ counted in GCL" = mean(GCL_bendo),
             "Total # B-endo+ counted in GCL" = sum(GCL_bendo),
-            "Mean ChAT+ cells in GCL/mm2" = mean(GCL_chat_mm),
-            "Range ChAT+ cells in GCL/mm2" = paste(round(min(GCL_chat_mm), 0),
-                                                  round(max(GCL_chat_mm), 0),
-                                                  sep=" - "),
-            "Mean B-endo+ cells in GCL/mm2" = mean(GCL_bendo_mm),
-            "Range B-endo+ cells in GCL/mm2" = paste(round(min(GCL_bendo_mm), 0),
-                                                     round(max(GCL_bendo_mm), 0),
-                                                  sep=" - "),
-            "Mean % B-endo+/ChAT+ in GCL/mm2" = mean(gcl_perc_mm),
-            "Range % B-endo+/ChAT+ in GCL/mm2" = paste(round(min(gcl_perc_mm), 0),
-                                                       round(max(gcl_perc_mm), 0),
-                                                       sep=" - ")) %>% 
-  mutate(across(where(is.numeric), round, 0))
+            "Mean ChAT+ cells in GCL/mm2" = paste0(round(mean(GCL_chat_mm), 0),
+                                                   "±", round(sd(GCL_chat_mm),0)),
+            "Mean B-endo+ cells in GCL/mm2" = paste0(round(mean(GCL_bendo_mm), 0),
+                                                   "±", round(sd(GCL_bendo_mm),0)))
 summary_table
-#write_xlsx(summary_table, "../data/bendo_summary_table_temp.xlsx")
+#write_xlsx(summary_table, "../data/bendo_summary_table.xlsx")
 ```
 
 
