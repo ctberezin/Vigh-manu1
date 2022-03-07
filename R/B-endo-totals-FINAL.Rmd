@@ -62,7 +62,7 @@ counts <- counts %>% mutate(
 
 counts_temp <- counts %>% filter(!is.na(GCL_chat_mm))
 
-counts_temp %>% summarise(
+counts_temp %>% group_by(light, time) %>%  summarise(
   min_INL_chat_mm = min(INL_chat_mm),
   mean_INL_chat_mm = mean(INL_chat_mm),
   max_INL_chat_mm = max(INL_chat_mm),
