@@ -61,7 +61,7 @@ pomc_circ_males <- pomc_circ %>% filter(Sex == "M")
 pomc_circ_m_plot <- ggplot(pomc_circ_males, aes(x=Time, y=Relative.GE)) +
   stat_summary(fun = 'mean', geom="bar", fill=c("yellow", "yellow", "grey70")) +
   stat_summary(fun.data = mean_se, geom = "errorbar", width=.2) +
-  geom_point() +
+  geom_point(size = 2) +
   theme_bw() %+replace%
   theme(plot.background = element_rect(fill = "transparent",colour = NA),
         panel.background = element_rect(fill = "transparent",colour = NA)) +
@@ -73,7 +73,7 @@ pomc_circ_m_plot <- ggplot(pomc_circ_males, aes(x=Time, y=Relative.GE)) +
 
 pomc_circ_m_plot
 
-ggsave(filename="../figures/pomc_circ_m.png", plot=pomc_circ_m_plot, height=4, width=4)
+#ggsave(filename="../figures/pomc_circ_m.png", plot=pomc_circ_m_plot, height=4, width=4)
 
 #normal
 shapiro.test(pomc_circ_males$Relative.GE)
@@ -311,17 +311,19 @@ m_pomc_all %>% group_by(Time, Light) %>%
 
 pomc_all_m <- ggplot(m_pomc_all, aes(x=Light, y=RelativeGE)) +
   stat_summary(fun = 'mean', geom="bar", aes(fill=Light)) +
-  geom_point() +
+  geom_point(size=2) +
   facet_wrap(~Time) +
   stat_summary(fun.data = mean_se, geom = "errorbar", width=.1) +
   theme_bw() %+replace%
   theme(legend.position="none",
+        axis.text.x = element_text(size = 12),
+        strip.text.x = element_text(size=14),
         axis.title.x = element_blank(),
         panel.spacing = unit(0,"pt"),
         plot.background = element_rect(fill = "transparent",colour = NA),
         panel.background = element_rect(fill = "transparent",colour = NA)) +
   scale_fill_manual(values=c("yellow", "grey70")) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.25))) +
   labs(y="Relative Gene Expression") #+
 #  geom_signif(y_position=4.8, xmin=1, xmax=2, annotation="n.s.", tip_length=0.02)
 
@@ -349,17 +351,20 @@ emmeans::emmeans(pomc_all_m_log_lm, pairwise ~ Time | Light)$contrasts
 
 pomc_all_m_log <- ggplot(m_pomc_all, aes(x=Light, y=log(RelativeGE))) +
   stat_summary(fun = 'mean', geom="bar", aes(fill=Light)) +
-  geom_point() +
+  geom_point(size=2) +
   facet_wrap(~Time) +
   stat_summary(fun.data = mean_se, geom = "errorbar", width=.1) +
   theme_bw() %+replace%
   theme(legend.position="none",
         axis.title.x = element_blank(),
+        axis.text.x = element_text(size = 12),
+        strip.text.x = element_text(size=14),
         panel.spacing = unit(0,"pt"),
         plot.background = element_rect(fill = "transparent",colour = NA),
         panel.background = element_rect(fill = "transparent",colour = NA)) +
   scale_fill_manual(values=c("yellow", "grey70")) +
-  labs(y="log(Relative Gene Expression)") #+
+  labs(y="log(Relative Gene Expression)") +
+  ylim(ymin=-0.75, ymax=2.2)
 #  geom_signif(y_position=4.8, xmin=1, xmax=2, annotation="n.s.", tip_length=0.02)
 
 pomc_all_m_log

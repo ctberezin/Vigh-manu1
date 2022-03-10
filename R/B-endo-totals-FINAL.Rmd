@@ -196,20 +196,22 @@ sumstats <- counts %>% group_by(light, time) %>%
                       sd_gcl = sd(GCL_bendo_mm))
 
 
-
 gcl_mm_plot <- ggplot() +
   geom_bar(data=sumstats, aes(x=light, y=mean_gcl, fill=light), stat="identity") +
   geom_errorbar(data=sumstats, aes(x=light,
                               ymin=mean_gcl-sd_gcl,
                               ymax=mean_gcl+sd_gcl), width=0.2) +
-  geom_point(data=counts, aes(x=light, y=GCL_bendo_mm)) +
+  geom_point(data=counts, aes(x=light, y=GCL_bendo_mm), size=2) +
   facet_wrap(~time) +
   theme_bw() %+replace%
   theme(axis.title.x=element_blank(),
         axis.ticks.x = element_blank(),
         axis.text.x = element_blank(),
         panel.spacing = unit(0, "pt"),
-        legend.position="none") +
+        strip.text.x = element_text(size = 14),
+        legend.position="none",
+        plot.background = element_rect(fill = "transparent",colour = NA),
+        panel.background = element_rect(fill = "transparent",colour = NA)) +
   labs(y=expression(paste("# ", beta, "-endorphin+ cells in GCL /" ~mm^2))) +
   scale_fill_manual(values=c("yellow", "gray70")) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.4)))
@@ -219,24 +221,23 @@ inl_mm_plot <- ggplot() +
   geom_errorbar(data=sumstats, aes(x=light,
                               ymin=mean_inl-sd_inl,
                               ymax=mean_inl+sd_inl), width=0.2) +
-  geom_point(data=counts, aes(x=light, y=INL_bendo_mm)) +
+  geom_point(data=counts, aes(x=light, y=INL_bendo_mm), size=2) +
   facet_wrap(~time) +
   theme_bw() %+replace%
   theme(axis.title.x=element_blank(),
-        axis.ticks.x = element_blank(),
+        axis.text.x = element_text(size = 12),
         panel.spacing = unit(0, "pt"),
         strip.background = element_blank(),
         strip.text.x = element_blank(),
-        legend.position="none") +
+        legend.position="none",
+        plot.background = element_rect(fill = "transparent",colour = NA),
+        panel.background = element_rect(fill = "transparent",colour = NA)) +
   labs(y=expression(paste("# ", beta, "-endorphin+ cells in INL /" ~mm^2))) +
   scale_fill_manual(values=c("yellow", "gray70")) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.3)))
 
-#,
-#        plot.background = element_rect(fill = "transparent",colour = NA),
-#        panel.background = element_rect(fill = "transparent",colour = NA)
-
 both_mm_plots <- ggarrange(gcl_mm_plot, inl_mm_plot, nrow=2)
+both_mm_plots
 
 ggsave("../figures/both_mm_plots.png", plot=both_mm_plots, height=6, width=6, bg = "transparent")
 
