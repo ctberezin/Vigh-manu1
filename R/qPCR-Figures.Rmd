@@ -50,6 +50,8 @@ pomc_circ_plot <- ggplot(pomc_circ, aes(x=Time, y=Relative.GE)) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
   
 pomc_circ_plot
+
+#ggsave(filename="../figures/pomc_circ_fm.png", plot=pomc_circ_plot, height=3, width=3)
 ```
 
 ```{r}
@@ -63,13 +65,13 @@ pomc_circ_m_plot <- ggplot(pomc_circ_males, aes(x=Time, y=Relative.GE)) +
   theme_few() +
   labs(x="Zeitgeber Time (ZT)",
        y="Relative Gene Expression") +
-  #geom_bracket(xmin="2", xmax="18", y.position=2.5, label="n.s.") +
-  #geom_bracket(xmin="10", xmax="18", y.position=2.5, label="") +
+  geom_bracket(xmin="2", xmax="18", y.position=2.2, label="n.s.") +
+  geom_bracket(xmin="10", xmax="18", y.position=2.2, label="") +
   scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
 
 pomc_circ_m_plot
 
-ggsave(filename="../figures/pomc_circ_males.png", plot=pomc_circ_m_plot, height=3, width=3)
+#ggsave(filename="../figures/pomc_circ_m.png", plot=pomc_circ_m_plot, height=3, width=3)
 
 #normal
 shapiro.test(pomc_circ_males$Relative.GE)
@@ -83,8 +85,7 @@ pomc_circ_m_lm <- lm(Relative.GE ~ Time, pomc_circ_males)
 plot(pomc_circ_m_lm, which=c(1,2))
 
 anova(pomc_circ_m_lm)
-#time is a significant factor
-#but no significant pairwise comps
+#no significant comps
 emmeans::emmeans(pomc_circ_m_lm, pairwise ~ Time)$contrasts
 
 ctrl_pomc_circ_males <- pomc_circ_males %>% filter(Time == "2")
@@ -109,24 +110,24 @@ power.anova.test(groups=3, n=5, between.var=0.009116243,
 ```{r pomc-light-dark}
 pomc_ld <- read.csv("../data/01142022-POMC-light-dark-add'l-samps.csv", fileEncoding = 'UTF-8-BOM')
 pomc_ld <- pomc_ld %>% mutate(Time = as.factor(Time.of.Day),
-                        Light = as.factor(Light.Condition),
-                        Sex = as.factor(Sex)) %>% 
-  dplyr::select(-Time.of.Day, -Light.Condition)
+                              Light = as.factor(Light.Condition),
+                              Sex = as.factor(Sex)) %>% 
+                      mutate(Light = fct_relevel(Light, c("light", "dark"))) %>% 
+                      dplyr::select(-Time.of.Day, -Light.Condition)
 
 
-pomc_ld_plot <- ggplot(pomc_ld, aes(x=Light, y=Relative.G.E.)) +
-  geom_point(aes(col=Sex)) +
+pomc_ld_mf <- ggplot(pomc_ld, aes(x=Light, y=Relative.G.E.)) +
   theme_few() +
   facet_wrap(~Time) +
-  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5)) +
+  stat_summary(fun = 'mean', geom="bar") +
+  geom_point(aes(col=Sex)) +
   labs(x="",
        y="Relative Gene Expression",
-       title = "POMC mRNA Expression") +
-  scale_alpha(guide = "none")
+       title = "POMC mRNA Expression")
   
-pomc_ld_plot
+pomc_ld_mf
 
-#ggsave(filename="../figures/pomc_ld_add'l.png", plot=pomc_ld_plot, height=3, width=3)
+#ggsave(filename="../figures/pomc_ld_mf.png", plot=pomc_ld_mf, height=3, width=3)
 
 shapiro.test(pomc_ld$Relative.G.E.)
 
@@ -140,7 +141,7 @@ qqnorm(pomc_ld_lm$residuals)
 qqline(pomc_ld_lm$residuals)
 
 anova(pomc_ld_lm)
-
+#sex is significant factor
 pomc_ld_av <- aov(pomc_ld_lm)
 TukeyHSD(pomc_ld_av)
 ```
@@ -150,17 +151,18 @@ TukeyHSD(pomc_ld_av)
 pomc_ld_f <- pomc_ld %>% filter(Sex == "F")
 
 pomc_ld_f_plot <- ggplot(pomc_ld_f, aes(x=Light, y=Relative.G.E.)) +
-  geom_point() +
   theme_few() +
   facet_wrap(~Time) +
-  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5)) +
+  stat_summary(fun = 'mean', geom="bar") +
+  geom_point() +
   labs(x="",
        y="Relative Gene Expression",
        title = "POMC mRNA in Females") +
-  scale_alpha(guide = "none") +
-  scale_y_continuous(limits = c(0,4))
+  scale_y_continuous(limits = c(0,3))
 
-#ggsave(filename="../figures/pomc_ld_add'l_f_only.png", plot=pomc_ld_f_plot, height=3, width=3)
+pomc_ld_f_plot
+
+#ggsave(filename="../figures/pomc_ld_f.png", plot=pomc_ld_f_plot, height=3, width=3)
 ```
 
 ```{r}
@@ -168,16 +170,19 @@ pomc_ld_f_plot <- ggplot(pomc_ld_f, aes(x=Light, y=Relative.G.E.)) +
 pomc_ld_m <- pomc_ld %>% filter(Sex == "M")
 
 pomc_ld_m_plot <- ggplot(pomc_ld_m, aes(x=Light, y=Relative.G.E.)) +
-  geom_point() +
   theme_few() +
   facet_wrap(~Time) +
-  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5)) +
+  stat_summary(fun = 'mean', geom="bar", aes(fill=Light)) +
+  stat_summary(fun.data = mean_se, geom = "errorbar", width=.2) +
+  geom_point() +
   labs(x="",
        y="Relative Gene Expression") +
-  scale_alpha(guide = "none") +
-  scale_y_continuous(limits = c(0,4))
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  scale_fill_manual(values=c("yellow", "grey70"))
 
-ggsave(filename="../figures/pomc_ld_m_only.png", plot=pomc_ld_m_plot, height=3, width=3)
+pomc_ld_m_plot
+
+#ggsave(filename="../figures/pomc_ld_m.png", plot=pomc_ld_m_plot, height=3, width=3)
 
 #non-normal
 shapiro.test(pomc_ld_m$Relative.G.E.)
@@ -202,12 +207,16 @@ emmeans::emmeans(pomc_ld_m_log_lm, pairwise ~ Time | Light)$contrasts
 pomc_ld_m_log_plot <- ggplot(pomc_ld_m, aes(x=Light, y=log(Relative.G.E.))) +
   theme_few() +
   facet_wrap(~Time) +
-  stat_summary(fun = 'mean', geom="bar") +
+  stat_summary(fun = 'mean', geom="bar", aes(fill=Light)) +
+  stat_summary(fun.data = mean_se, geom = "errorbar", width=.2) +
   geom_point() +
   labs(x="",
-       y="Relative Gene Expression")
+       y="Relative Gene Expression") +
+  ylim(ymin=-0.75, ymax=1.5) +
+  scale_fill_manual(values=c("yellow", "grey70"))
+pomc_ld_m_log_plot
 
-ggsave(filename="../figures/pomc_ld_m_log.png", plot=pomc_ld_m_log_plot, height=3, width=3)
+#ggsave(filename="../figures/pomc_ld_m_log.png", plot=pomc_ld_m_log_plot, height=3, width=3)
 
 ctrl_pomc_ld_m <- pomc_ld_m %>% filter(Light == "light" & Time == "day")
 
@@ -237,7 +246,8 @@ pomc_all <- pomc_all %>% mutate(Sex = as.factor(Sex),
                                 Hour = as.factor(Hour),
                                 Time = as.factor(Time),
                                 Light = as.factor(Light))
-pomc_all <- pomc_all %>% mutate(Hour = fct_relevel(Hour, c("8am", "12pm", "4pm", "12am", "1am")))
+pomc_all <- pomc_all %>% mutate(Hour = fct_relevel(Hour, c("8am", "12pm", "4pm", "12am", "1am")),
+                                Light = fct_relevel(Light, c("light", "dark")))
 
 qqnorm(pomc_all$RelativeGE)
 qqline(pomc_all$RelativeGE)
@@ -277,16 +287,15 @@ t.test(RelativeGE ~ Hour, data=night_pomc_all)
 
 par(mfrow=c(1,2))
 
-timeplot <- ggplot(pomc_all, aes(x=Time, y=RelativeGE)) +
-  geom_point(aes(col=Light)) +
-  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5)) +
+pomc_all_mf <- ggplot(pomc_all, aes(x=Time, y=RelativeGE)) +
   theme_few() +
   facet_wrap(~Sex) +
-  stat_summary(fun = 'mean', geom="bar", aes(alpha=0.5))
+  stat_summary(fun = 'mean', geom="bar") +
+  geom_point(aes(col=Light))
 
-timeplot
+pomc_all_mf
 
-#ggsave(filename="../figures/pomc_ld_circ_by_time.png", plot=timeplot)
+#ggsave(filename="../figures/pomc_all_mf.png", plot=pomc_all_mf)
 ```
 
 ```{r}
@@ -297,19 +306,20 @@ m_pomc_all %>% group_by(Time, Light) %>%
   summarise(n = n(),
             mean = mean(RelativeGE))
 
-timeplot_m <- ggplot(m_pomc_all, aes(x=Time, y=RelativeGE)) +
-  stat_summary(fun = 'mean', geom="bar", fill="gray40") +
+pomc_all_m <- ggplot(m_pomc_all, aes(x=Light, y=RelativeGE)) +
+  stat_summary(fun = 'mean', geom="bar", aes(fill=Light)) +
   geom_point(size=2) +
-  facet_wrap(~Light) +
+  facet_wrap(~Time) +
   stat_summary(fun.data = mean_se, geom = "errorbar", width=.1) +
-  theme_bw() +
-  scale_color_manual(values=c("black", "yellow")) +
+  theme_bw() %+replace%
+  theme(legend.position="none") +
+  scale_fill_manual(values=c("yellow", "grey70")) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.1))) #+
 #  geom_signif(y_position=4.8, xmin=1, xmax=2, annotation="n.s.", tip_length=0.02)
 
-timeplot_m
+pomc_all_m
 
-ggsave(filename="../figures/pomc_all_males.png", plot=timeplot_m, height=4, width=3)
+#ggsave(filename="../figures/pomc_all_m.png", plot=pomc_all_m, height=4, width=6)
 
 #non-normal
 shapiro.test(m_pomc_all$RelativeGE)
@@ -329,18 +339,19 @@ emmeans::emmeans(pomc_all_m_log_lm, pairwise ~ Light * Time)$contrasts
 emmeans::emmeans(pomc_all_m_log_lm, pairwise ~ Light | Time)$contrasts
 emmeans::emmeans(pomc_all_m_log_lm, pairwise ~ Time | Light)$contrasts
 
-timeplot_log_m <- ggplot(m_pomc_all, aes(x=Time, y=log(RelativeGE))) +
-  stat_summary(fun = 'mean', geom="bar", fill="gray40") +
+pomc_all_m_log <- ggplot(m_pomc_all, aes(x=Light, y=log(RelativeGE))) +
+  stat_summary(fun = 'mean', geom="bar", aes(fill=Light)) +
   geom_point(size=2) +
-  facet_wrap(~Light) +
+  facet_wrap(~Time) +
   stat_summary(fun.data = mean_se, geom = "errorbar", width=.1) +
-  theme_bw() +
-  scale_color_manual(values=c("black", "yellow")) #+
+  theme_bw() %+replace%
+  theme(legend.position="none") +
+  scale_fill_manual(values=c("yellow", "grey70")) #+
 #  geom_signif(y_position=4.8, xmin=1, xmax=2, annotation="n.s.", tip_length=0.02)
 
-timeplot_log_m
+pomc_all_m_log
 
-ggsave(filename="../figures/pomc_all_males_log.png", plot=timeplot_log_m, height=4, width=3)
+#ggsave(filename="../figures/pomc_all_m_log.png", plot=pomc_all_m_log, height=4, width=3)
 
 ctrl_pomc_all_m <- m_pomc_all %>% filter(Light == "light" & Time == "day")
 
@@ -386,7 +397,7 @@ mcko_plot <- mcko %>%
 
 mcko_plot
 
-ggsave(filename="../figures/mcko_fig_bars.png", plot=mcko_plot, height=4, width=3)
+#ggsave(filename="../figures/mcko_fig_bars.png", plot=mcko_plot, height=4, width=3)
 
 mcko %>% group_by(Genotype) %>% 
   summarise(mean(Relative.GE))
@@ -432,5 +443,5 @@ mor_plot <- mor %>% ggplot(aes(x=treatment, y=rge)) +
 
 mor_plot
 
-ggsave(filename="../figures/mor_morphine_qpcr.png", plot=mor_plot, height=4, width=3)
+#ggsave(filename="../figures/mor_morphine_qpcr.png", plot=mor_plot, height=4, width=3)
 ```
