@@ -67,6 +67,13 @@ counts %>% group_by(light, time) %>%  summarise(
   max_GCL_chat_mm = max(GCL_chat_mm)
 )
 
+counts %>% summarise(
+  mean_INL_chat_mm = mean(INL_chat_mm),
+  sd_INL_chat_mm = sd(INL_chat_mm),
+  mean_GCL_chat_mm = mean(GCL_chat_mm),
+  sd_GCL_chat_mm = sd(GCL_chat_mm)
+)
+
 shapiro.test(counts$GCL_chat_mm)
 shapiro.test(counts$INL_chat_mm)
 
@@ -126,13 +133,11 @@ anova(inllm)
 
 ```{r}
 #manova for bendo cells per mm2
-counts %>% group_by(light, time) %>% summarise(
-  min_INL_bendo_mm = min(INL_bendo_mm),
+counts %>% summarise(
   mean_INL_bendo_mm = mean(INL_bendo_mm),
-  max_INL_bendo_mm = max(INL_bendo_mm),
-  min_GCL_bendo_mm = min(GCL_bendo_mm),
+  sd_INL_bendo_mm = sd(INL_bendo_mm),
   mean_GCL_bendo_mm = mean(GCL_bendo_mm),
-  max_GCL_bendo_mm = max(GCL_bendo_mm)
+  sd_GCL_bendo_mm = sd(GCL_bendo_mm)
 )
 
 shapiro.test(counts$GCL_bendo_mm)
@@ -176,7 +181,7 @@ abline(25,2)
 man_bendo_test <- manova(cbind(GCL_bendo_mm, INL_bendo_mm) ~ light * time, data=counts)
 summary(man_bendo_test)
 summary.aov(man_bendo_test)
-#light:time interaction is just about significant overall and for GCL and INL
+#light:time interaction is significant overall and for GCL, close in INL
 #look at comparisons through univariate models for each dep variable
 anova(gcl_bendo_lm)
 summary(gcl_bendo_lm)
@@ -184,6 +189,15 @@ anova(inl_bendo_lm)
 summary(inl_bendo_lm)
 emmeans::emmeans(gcl_bendo_lm, pairwise ~ light * time, adjust="none")$contrasts
 emmeans::emmeans(inl_bendo_lm, pairwise ~ light * time, adjust="none")$contrasts
+
+interaction.plot(x.factor=counts$time,
+                 trace.factor=counts$light,
+                 response=counts$GCL_bendo_mm,
+                 fun=median)
+interaction.plot(x.factor=counts$light,
+                 trace.factor=counts$time,
+                 response=counts$GCL_bendo_mm,
+                 fun=median)
 ```
 
 ```{r}
