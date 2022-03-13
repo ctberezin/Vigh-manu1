@@ -58,18 +58,23 @@ pomc_circ_plot
 #males only
 pomc_circ_males <- pomc_circ %>% filter(Sex == "M")
 
-pomc_circ_m_plot <- ggplot(pomc_circ_males, aes(x=Time, y=Relative.GE)) +
-  stat_summary(fun = 'mean', geom="bar", fill=c("yellow", "yellow", "grey70")) +
-  stat_summary(fun.data = mean_se, geom = "errorbar", width=.2) +
-  geom_point(size = 2) +
+pomc_circ_m_summ <- pomc_circ_males %>% group_by(Time) %>%
+                    summarise(n = n(),
+                              mean = mean(Relative.GE),
+                              sd = sd(Relative.GE))
+
+pomc_circ_m_summ
+
+pomc_circ_m_plot <- ggplot() +
+  stat_summary(data=pomc_circ_males, aes(x=Time, y=Relative.GE), fun = 'mean', geom="bar", fill=c("yellow", "yellow", "grey70")) +
+  geom_errorbar(data=pomc_circ_m_summ, aes(x=Time, ymin=mean-sd, ymax=mean+sd), width=.2) +
+  geom_point(data=pomc_circ_males, aes(x=Time, y=Relative.GE), size = 2) +
   theme_bw() %+replace%
   theme(plot.background = element_rect(fill = "transparent",colour = NA),
         panel.background = element_rect(fill = "transparent",colour = NA)) +
   labs(x="Zeitgeber Time (ZT)",
        y="Relative Gene Expression") +
-  geom_bracket(xmin="2", xmax="18", y.position=2.2, label="n.s.") +
-  geom_bracket(xmin="10", xmax="18", y.position=2.2, label="") +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2)))
 
 pomc_circ_m_plot
 
@@ -306,7 +311,7 @@ pomc_all_mf
 #males only
 m_pomc_all <- pomc_all %>% filter(Sex == "M")
 
-m_pomc_all %>% group_by(Time, Light) %>% 
+m_pomc_all_summ <- m_pomc_all %>% group_by(Time, Light) %>% 
   summarise(n = n(),
             mean = mean(RelativeGE),
             sd = sd(RelativeGE),
@@ -314,11 +319,11 @@ m_pomc_all %>% group_by(Time, Light) %>%
             log_sd = sd(log(RelativeGE))
             )
 
-pomc_all_m <- ggplot(m_pomc_all, aes(x=Light, y=RelativeGE)) +
-  stat_summary(fun = 'mean', geom="bar", aes(fill=Light)) +
-  geom_point(size=2) +
+pomc_all_m <- ggplot() +
+  stat_summary(data=m_pomc_all, aes(x=Light, y=RelativeGE, fill=Light), fun = 'mean', geom="bar") +
+  geom_point(data= m_pomc_all, aes(x=Light, y=RelativeGE), size=2) +
   facet_wrap(~Time) +
-  stat_summary(fun.data = mean_se, geom = "errorbar", width=.1) +
+  geom_errorbar(data=m_pomc_all_summ, aes(x=Light, ymin=mean-sd, ymax=mean+sd), width=.2) +
   theme_bw() %+replace%
   theme(legend.position="none",
         axis.text.x = element_text(size = 12),
@@ -328,9 +333,8 @@ pomc_all_m <- ggplot(m_pomc_all, aes(x=Light, y=RelativeGE)) +
         plot.background = element_rect(fill = "transparent",colour = NA),
         panel.background = element_rect(fill = "transparent",colour = NA)) +
   scale_fill_manual(values=c("yellow", "grey70")) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.25))) +
-  labs(y="Relative Gene Expression") #+
-#  geom_signif(y_position=4.8, xmin=1, xmax=2, annotation="n.s.", tip_length=0.02)
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(y="Relative Gene Expression")
 
 pomc_all_m
 
@@ -354,11 +358,11 @@ emmeans::emmeans(pomc_all_m_log_lm, pairwise ~ Light * Time)$contrasts
 emmeans::emmeans(pomc_all_m_log_lm, pairwise ~ Light | Time)$contrasts
 emmeans::emmeans(pomc_all_m_log_lm, pairwise ~ Time | Light)$contrasts
 
-pomc_all_m_log <- ggplot(m_pomc_all, aes(x=Light, y=log(RelativeGE))) +
-  stat_summary(fun = 'mean', geom="bar", aes(fill=Light)) +
-  geom_point(size=2) +
+pomc_all_m_log <- ggplot() +
+  stat_summary(data=m_pomc_all, aes(x=Light, y=log(RelativeGE), fill=Light), fun = 'mean', geom="bar") +
+  geom_point(data=m_pomc_all, aes(x=Light, y=log(RelativeGE)), size=2) +
   facet_wrap(~Time) +
-  stat_summary(fun.data = mean_se, geom = "errorbar", width=.1) +
+  geom_errorbar(data=m_pomc_all_summ, aes(x=Light, ymin=log_mean-log_sd, ymax=log_mean+log_sd), width=.2) +
   theme_bw() %+replace%
   theme(legend.position="none",
         axis.title.x = element_blank(),
@@ -370,7 +374,6 @@ pomc_all_m_log <- ggplot(m_pomc_all, aes(x=Light, y=log(RelativeGE))) +
   scale_fill_manual(values=c("yellow", "grey70")) +
   labs(y="log(Relative Gene Expression)") +
   ylim(ymin=-0.75, ymax=2.2)
-#  geom_signif(y_position=4.8, xmin=1, xmax=2, annotation="n.s.", tip_length=0.02)
 
 pomc_all_m_log
 
@@ -401,29 +404,36 @@ mcko <- read.csv("../data/08162021-McKO-totalret-final.csv", fileEncoding = 'UTF
 mcko <- mcko %>% 
   mutate(Genotype = fct_relevel(Genotype, c("WT", "McKO")))
 
+mcko_summ <- mcko %>% group_by(Genotype) %>%
+                      summarise(n = n(),
+                                mean = mean(Relative.GE),
+                                sd = sd(Relative.GE))
+
 #p-values from SigmaPlot
 mcko_stats <- tibble::tribble(
   ~group1, ~group2, ~p.adj,
   "WT", "McKO", "<0.001"
 )
 
-mcko_plot <- mcko %>% 
-  ggplot(aes(x=Genotype, y=Relative.GE, fill=Genotype)) +
-  stat_summary(fun = 'mean', geom="bar") +
-  stat_summary(fun.data = mean_se, geom = "errorbar", width=.1) +
-  geom_point() +
+mcko_plot <- ggplot() +
+  stat_summary(data=mcko, aes(x=Genotype, y=Relative.GE, fill=Genotype), fun = 'mean', geom="bar") +
+  geom_errorbar(data=mcko_summ, aes(x=Genotype, ymin=mean-sd, ymax=mean+sd), width=0.2) +
+  geom_point(data=mcko, aes(x=Genotype, y=Relative.GE), size=2) +
   theme_bw() %+replace%
   theme(legend.position = "none") +
-  labs(y="Relative Gene Expression") +
+  labs(y="Relative Gene Expression",
+       x="") +
   geom_signif(y_position=1.55, xmin=1, xmax=2, annotation="***", tip_length=0.02) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2)))
 
 mcko_plot
 
-#ggsave(filename="../figures/mcko_fig_bars.png", plot=mcko_plot, height=4, width=3)
+ggsave(filename="../figures/mcko_fig_bars.png", plot=mcko_plot, height=4, width=3)
 
 mcko %>% group_by(Genotype) %>% 
-  summarise(mean(Relative.GE))
+  summarise(n= n(),
+            mean = mean(Relative.GE),
+            sd = sd(Relative.GE))
 ```
 
 ### MOR mRNA in morphine vs saline treatment (retinas only)

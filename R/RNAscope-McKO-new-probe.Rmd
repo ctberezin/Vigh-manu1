@@ -30,6 +30,11 @@ data <- tibble(genotype, sex, number, positive, total)
 data <- mutate(data,
                 number = str_c(number),
                 percent = positive/total*100)
+
+sumstats <- data %>% group_by(genotype) %>%
+         summarise(n = n(),
+                   mean = mean(percent),
+                   sd = sd(percent))
 ```
 
 ```{r}
@@ -71,25 +76,19 @@ range(mckos_only$percent)
 ```
 
 ```{r}
-#same t.test as above but using ggpubr to put p-value into geom_bracket
-stat.test <- compare_means(percent ~ genotype, data, method = "t.test")
-
 data <- data %>% 
   mutate(genotype = fct_relevel(genotype, c("WT", "McKO")))
 
-mcko_plot <- ggplot(data, aes(genotype, percent, fill=genotype)) +
-  stat_summary(fun = 'mean', geom="bar") +
-  stat_summary(fun.data = mean_se, geom = "errorbar", width=.1) +
-  geom_point() +
+mcko_plot <- ggplot() +
+  stat_summary(data=data, aes(genotype, percent, fill=genotype), fun = 'mean', geom="bar") +
+  geom_errorbar(data=sumstats, aes(genotype, ymin=mean-sd, ymax=mean+sd), width=0.2) +
+  geom_point(data=data, aes(genotype, percent), size=2) +
   theme_bw() %+replace%
   theme(legend.position = "none") +
-  labs(x="Genotype",
+  labs(x="",
        y="% ipRGCs with MOR mRNA") +
-#  geom_bracket(
-#    aes(xmin = "WT", xmax = "McKO", label = signif(p, 2)),
-#    data = stat.test, y.position = 110) +
   geom_signif(y_position=109, xmin=1, xmax=2, annotation="***", tip_length=0.02) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.1)),
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2)),
                      labels = function(x) paste0(x, "%"),
                      breaks = seq(0, 100, by = 25))
 

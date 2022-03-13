@@ -243,6 +243,8 @@ geom_signif(y_position=c(0.08, 0.19), xmin=c(0.8, 1.8), xmax=c(1.2, 2.2),annotat
 ```{r}
 SumStatcirca$phase <- recode_factor(SumStatcirca$phase, activity_light = "Light", activity_dark = "Dark")
 
+SumStatcirca
+
 act_quant_plot <- ggplot(SumStatcirca, aes(phase, mean)) + 
   geom_bar(aes(fill = fct_relevel(Condition, c("WT", "McKO"))), stat="identity", position=position_dodge(), width=.5) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se, fill = fct_relevel(Condition, c("WT", "McKO"))), width=.2, position=position_dodge(0.47)) +
