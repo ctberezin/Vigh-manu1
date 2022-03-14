@@ -319,11 +319,14 @@ m_pomc_all_summ <- m_pomc_all %>% group_by(Time, Light) %>%
             log_sd = sd(log(RelativeGE))
             )
 
+levels(m_pomc_all$Time) <- c("ZTday", "ZTnight")
+levels(m_pomc_all_summ$Time) <- c("ZTday", "ZTnight")
+
 pomc_all_m <- ggplot() +
   stat_summary(data=m_pomc_all, aes(x=Light, y=RelativeGE, fill=Light), fun = 'mean', geom="bar") +
   geom_point(data= m_pomc_all, aes(x=Light, y=RelativeGE), size=2) +
-  facet_wrap(~Time) +
   geom_errorbar(data=m_pomc_all_summ, aes(x=Light, ymin=mean-sd, ymax=mean+sd), width=.2) +
+  facet_wrap(~Time) +
   theme_bw() %+replace%
   theme(legend.position="none",
         axis.text.x = element_text(size = 12),
@@ -361,8 +364,8 @@ emmeans::emmeans(pomc_all_m_log_lm, pairwise ~ Time | Light)$contrasts
 pomc_all_m_log <- ggplot() +
   stat_summary(data=m_pomc_all, aes(x=Light, y=log(RelativeGE), fill=Light), fun = 'mean', geom="bar") +
   geom_point(data=m_pomc_all, aes(x=Light, y=log(RelativeGE)), size=2) +
-  facet_wrap(~Time) +
   geom_errorbar(data=m_pomc_all_summ, aes(x=Light, ymin=log_mean-log_sd, ymax=log_mean+log_sd), width=.2) +
+  facet_wrap(~Time) +
   theme_bw() %+replace%
   theme(legend.position="none",
         axis.title.x = element_blank(),
