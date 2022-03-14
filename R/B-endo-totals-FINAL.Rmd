@@ -17,6 +17,7 @@ library(car)
 library(ggthemes)
 library(viridis)
 library(writexl)
+library(DescTools)
 ```
 
 ## Reading in and Tidying the Data
@@ -46,18 +47,27 @@ counts <- counts %>%
   mutate(GCL_perc=GCL_bendo/GCL_chat*100,
          INL_perc=INL_bendo/INL_chat*100,
          total_perc=total_bendo/total_chat*100)
-counts
-```
-
-```{r}
-#manova for ChAT cells per mm2
 counts <- counts %>% mutate(
   GCL_chat_mm = GCL_chat/Area,
   GCL_bendo_mm = GCL_bendo/Area,
   INL_chat_mm = INL_chat/Area,
   INL_bendo_mm = INL_bendo/Area
 )
+counts <- counts %>% mutate(group = as.factor(c(1,1,1,4,4,4,2,2,2,3,3,3)))
+counts
 
+levels(counts$group)
+
+gcl_group_lm <- lm(GCL_bendo_mm ~ group, data=counts)
+ScheffeTest(aov(gcl_group_lm), contrasts=c(1, -1/3, -1/3, -1/3))
+ScheffeTest(aov(gcl_group_lm), contrasts=c(1, 0, -1/2, -1/2))
+inl_group_lm <- lm(INL_bendo_mm ~ group, data=counts)
+ScheffeTest(aov(inl_group_lm), contrasts=c(1, -1/3, -1/3, -1/3))
+ScheffeTest(aov(inl_group_lm), contrasts=c(1, 0, -1/2, -1/2))
+```
+
+```{r}
+#manova for ChAT cells per mm2
 counts %>% group_by(light, time) %>%  summarise(
   min_INL_chat_mm = min(INL_chat_mm),
   mean_INL_chat_mm = mean(INL_chat_mm),
@@ -133,8 +143,8 @@ anova(inllm)
 
 ```{r}
 #manova for bendo cells per mm2
-counts %>% summarise(
-  mean_INL_bendo_mm = mean(INL_bendo_mm),
+counts_sumstats <- counts %>% group_by(time, light) %>%
+  summarise(mean_INL_bendo_mm = mean(INL_bendo_mm),
   sd_INL_bendo_mm = sd(INL_bendo_mm),
   mean_GCL_bendo_mm = mean(GCL_bendo_mm),
   sd_GCL_bendo_mm = sd(GCL_bendo_mm)
@@ -184,28 +194,44 @@ summary.aov(man_bendo_test)
 #light:time interaction is significant overall and for GCL, close in INL
 #look at comparisons through univariate models for each dep variable
 anova(gcl_bendo_lm)
-summary(gcl_bendo_lm)
+#summary(gcl_bendo_lm)
+Anova(gcl_bendo_lm, type="3")
 anova(inl_bendo_lm)
+Anova(inl_bendo_lm, type="3")
 summary(inl_bendo_lm)
-emmeans::emmeans(gcl_bendo_lm, pairwise ~ light * time, adjust="none")$contrasts
-emmeans::emmeans(inl_bendo_lm, pairwise ~ light * time, adjust="none")$contrasts
 
+emmeans::emmeans(gcl_bendo_lm, pairwise ~ light | time)
+emmeans::emmeans(gcl_bendo_lm, pairwise ~ time | light)
 
-gcl_inter_plot <- ggplot(counts, aes(x = time, color = light, group = light, y = GCL_bendo_mm)) +
-  stat_summary(fun = mean, geom = "point", size=3) +
-  stat_summary(fun = mean, geom = "line", size=1) +
+emmeans::emmeans(inl_bendo_lm, pairwise ~ light | time)
+emmeans::emmeans(inl_bendo_lm, pairwise ~ time | light)
+
+gcl_inter_plot <- ggplot() +
+  stat_summary(data=counts, aes(x = time, y = GCL_bendo_mm, color = light, group = light),
+               fun = mean, geom = "point", size=3) +
+  stat_summary(data=counts, aes(x = time, y = GCL_bendo_mm, color = light, group = light),
+               fun = mean, geom = "line", size=1) +
+  #geom_errorbar(data=counts_sumstats, aes(x=time, ymin=mean_GCL_bendo_mm-sd_GCL_bendo_mm,
+  #              ymax=mean_GCL_bendo_mm+sd_GCL_bendo_mm), width=0.1) +
   labs(y=expression(paste("# ", beta, "-endorphin+ cells in GCL /" ~mm^2))) +
   scale_color_manual(values=c("gold", "grey20")) +
   theme_bw() 
+gcl_inter_plot
 #ggsave("../figures/gcl_interaction_plot.png", plot=gcl_inter_plot, width=5, height=4)
 
-inl_inter_plot <- ggplot(counts, aes(x = time, color = light, group = light, y = INL_bendo_mm)) +
-  stat_summary(fun = mean, geom = "point", size=3) +
-  stat_summary(fun = mean, geom = "line", size=1) +
+inl_inter_plot <- ggplot() +
+  stat_summary(data=counts, aes(x = time, color = light, group = light, y = INL_bendo_mm),
+               fun = mean, geom = "point", size=3) +
+  stat_summary(data=counts, aes(x = time, color = light, group = light, y = INL_bendo_mm),
+               fun = mean, geom = "line", size=1) +
+  #geom_errorbar(data=counts_sumstats, aes(x=time, ymin=mean_INL_bendo_mm-sd_INL_bendo_mm,
+  #              ymax=mean_INL_bendo_mm+sd_INL_bendo_mm), width=0.1) +
   labs(y=expression(paste("# ", beta, "-endorphin+ cells in INL /" ~mm^2))) +
   scale_color_manual(values=c("gold", "grey20")) +
   theme_bw()
 #ggsave("../figures/inl_interaction_plot.png", plot=inl_inter_plot, width=5, height=4)
+
+
 ```
 
 ```{r}
