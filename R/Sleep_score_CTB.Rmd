@@ -161,4 +161,11 @@ lattice::qqmath(lmer_wts_sws)
 anova(lmer_wts_sws)
 #emmeans::emmeans(lmer_wts, pairwise ~ ZT | Genotype)
 emmeans::emmeans(lmer_wts_sws, pairwise ~  Genotype | ZT)
+
+lmer_wts_ps <- lmer(mean_ps ~ ZT*Genotype+(1|Transmitter), data = t_wt_days)
+plot(lmer_wts_ps, type=c("p","smooth"), col.line=1)
+lattice::qqmath(lmer_wts_ps)
+anova(lmer_wts_ps)
+#emmeans::emmeans(lmer_wts, pairwise ~ ZT | Genotype)
+emmeans::emmeans(lmer_wts_ps, pairwise ~  Genotype | ZT)
 ```
