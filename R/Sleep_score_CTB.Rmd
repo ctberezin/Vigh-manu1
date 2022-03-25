@@ -1,0 +1,164 @@
+---
+title: "Sleep_score_CTB"
+author: "nbergum"
+date: "3/25/2022"
+output: html_document
+---
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lme4)
+```
+
+```{r}
+xl <- read.csv("../data/McKO_WT_combined.csv")
+colnames(xl)[1] <- gsub('^...','',colnames(xl)[1])
+xl
+
+t_wt <- xl %>%
+   group_by(Transmitter, Genotype, ZT, Day) %>%
+   dplyr::summarise(sum_wake = sum(Wake),
+                    sum_sws = sum(SWS),
+                    sum_ps = sum(PS),
+                    sum_art = sum(Artifact))
+
+t_wt$PercentWake <- (t_wt$sum_wake / (t_wt$sum_sws + t_wt$sum_wake + t_wt$sum_ps + t_wt$sum_art))
+t_wt$PercentSWS <- (t_wt$sum_sws / (t_wt$sum_sws + t_wt$sum_wake + t_wt$sum_ps + t_wt$sum_art))
+t_wt$PercentPS <- (t_wt$sum_ps / (t_wt$sum_sws + t_wt$sum_wake + t_wt$sum_ps + t_wt$sum_art))
+t_wt$PercentSleep <- ((t_wt$sum_sws + t_wt$sum_ps)/ (t_wt$sum_sws + t_wt$sum_wake + t_wt$sum_ps + t_wt$sum_art))
+
+t_wt <- t_wt %>% dplyr::mutate(phase= ifelse(ZT>11, "dark", "light"))
+
+t_wt$ZT <- as.factor(t_wt$ZT)
+
+t_wt
+
+SumStatwt <- dplyr::summarise(group_by(t_wt, Genotype, ZT, phase),
+n = n(),
+mean_Wake = mean(PercentWake),
+sd_Wake = sd(PercentWake),
+se_Wake = sd_Wake/sqrt(n),
+mean_Sleep = mean(PercentSleep),
+sd_Sleep = sd(PercentSleep),
+se_Sleep = sd_Sleep/sqrt(n),
+mean_SWS = mean(PercentSWS),
+sd_SWS = sd(PercentSWS),
+se_SWS = sd_SWS/sqrt(n),
+mean_PS = mean(PercentPS),
+sd_PS = sd(PercentPS),
+se_PS = sd_PS/sqrt(n))
+SumStatwt
+
+t_wt_days <- t_wt %>%
+   group_by(Transmitter, Genotype, ZT, phase) %>%
+   dplyr::summarise(mean_wake = mean(PercentWake),
+                    mean_sws = mean(PercentSWS),
+                    mean_ps = mean(PercentPS),
+                    mean_sleep = mean(PercentSleep))
+t_wt_days
+```
+
+```{r}
+ggplot(data=SumStatwt, aes(ZT, mean_Wake, color=Genotype)) + geom_line(aes(group=Genotype)) + geom_point(stat="identity", position=position_dodge(), size=2)  + geom_errorbar(data=SumStatwt, aes(ZT,ymin=mean_Wake-se_Wake, ymax=mean_Wake+se_Wake, fill=Genotype), width=.5) + scale_y_continuous(labels = scales::percent)
+
+ggplot(data=SumStatwt, aes(ZT, mean_Sleep, color=Genotype)) + geom_line(aes(group=Genotype)) + geom_point(stat="identity", position=position_dodge(), size=2)  + geom_errorbar(data=SumStatwt, aes(ZT,ymin=mean_Sleep-se_Sleep, ymax=mean_Sleep+se_Sleep,fill=Genotype), width=.5) + scale_y_continuous(labels = scales::percent)
+
+ggplot(data=SumStatwt, aes(ZT, mean_SWS, color=Genotype)) + geom_line(aes(group=Genotype)) + geom_point(stat="identity", position=position_dodge(), size=2)  + geom_errorbar(data=SumStatwt, aes(ZT,ymin=mean_SWS-se_SWS, ymax=mean_SWS+se_SWS), width=.5) + scale_y_continuous(labels = scales::percent)
+
+ggplot(data=SumStatwt, aes(ZT, mean_PS, color=Genotype)) + geom_line(aes(group=Genotype)) + geom_point(stat="identity", position=position_dodge(), size=2)  + geom_errorbar(data=SumStatwt, aes(ZT,ymin=mean_PS-se_PS, ymax=mean_PS+se_PS), width=.5) + scale_y_continuous(labels = scales::percent)
+```
+
+```{r}
+SumStatwtp <- dplyr::summarise(group_by(t_wt, Genotype, phase),
+n = n(),
+mean_Wake = mean(PercentWake),
+sd_Wake = sd(PercentWake),
+se_Wake = sd_Wake/sqrt(n),
+mean_Sleep = mean(PercentSleep),
+sd_Sleep = sd(PercentSleep),
+se_Sleep = sd_Sleep/sqrt(n),
+mean_SWS = mean(PercentSWS),
+sd_SWS = sd(PercentSWS),
+se_SWS = sd_SWS/sqrt(n),
+mean_PS = mean(PercentPS),
+sd_PS = sd(PercentPS),
+se_PS = sd_PS/sqrt(n))
+SumStatwtp
+
+t_wt
+t_wtp <- t_wt %>%
+  group_by(Transmitter, Genotype, phase)%>%
+  dplyr::summarise(mean_wake = mean(PercentWake),
+                   mean_sws = mean(PercentSWS),
+                   mean_ps = mean(PercentPS),
+                   mean_sleep = mean(PercentSleep))
+t_wtp
+
+
+ggplot() + 
+  geom_bar(data=SumStatwtp, aes(phase, mean_Wake,fill=Genotype), stat="identity", position=position_dodge(width=0.5), width=0.5) +
+  geom_errorbar(data=SumStatwtp, aes(x=phase,ymin=mean_Wake - se_Wake, ymax=mean_Wake + se_Wake, fill=Genotype), position=position_dodge(width=0.5), width=.2,) + 
+  geom_point(data=t_wtp, aes(x=phase, y=mean_wake, fill=Genotype), position=position_dodge(width=0.5)) + scale_y_continuous(labels = scales::percent) + theme_bw()
+
+ggplot() + 
+  geom_bar(data=SumStatwtp, aes(phase, mean_Sleep,fill=Genotype), stat="identity", position=position_dodge(width=0.5), width=0.5) +
+  geom_errorbar(data=SumStatwtp, aes(x=phase,ymin=mean_Sleep - se_Sleep, ymax=mean_Sleep + se_Sleep, fill=Genotype), position=position_dodge(width=0.5), width=.2,) + 
+  geom_point(data=t_wtp, aes(x=phase, y=mean_sleep, fill=Genotype), position=position_dodge(width=0.5)) + scale_y_continuous(labels = scales::percent) + theme_bw()
+```
+
+```{r}
+ggplot(data=t_wt, aes(ZT, PercentWake, color=Genotype)) + geom_line(aes(group=Transmitter)) + geom_point() + scale_y_continuous(labels = scales::percent)
+
+ggplot(data=t_wt, aes(ZT, PercentWake, color=Genotype)) + geom_line(aes(group=1)) + geom_point(stat="identity", position=position_dodge(), size=2) + facet_wrap(~Transmitter, ncol=4) + scale_y_continuous(labels = scales::percent)
+
+ggplot(data=t_wt, aes(ZT, PercentSleep, color=Genotype)) + geom_line(aes(group=Transmitter)) + geom_point()+ scale_y_continuous(labels = scales::percent)
+
+ggplot(data=t_wt, aes(ZT, PercentSleep, color=Genotype)) + geom_line(aes(group=1)) + geom_point(stat="identity", position=position_dodge(), size=2) + facet_wrap(~Transmitter, ncol = 4) + scale_y_continuous(labels = scales::percent)
+```
+
+```{r}
+t_wt$phase <- as.factor(t_wt$phase)
+t_wt$Genotype <- as.factor(t_wt$Genotype)
+t_wt_days$phase <- as.factor(t_wt_days$phase)
+t_wt_days$Genotype <- as.factor(t_wt_days$Genotype)
+lm_day <- wilcox.test(mean_wake ~ Genotype, data= t_wt_days)
+lm_day
+
+lmer_wt <- lmer(mean_wake ~ phase*Genotype+(1|Transmitter), data = t_wt_days)
+plot(lmer_wt, type=c("p","smooth"), col.line=1)
+lattice::qqmath(lmer_wt)
+anova(lmer_wt)
+emmeans::emmeans(lmer_wt, pairwise ~ Genotype | phase)$contrasts
+emmeans::emmeans(lmer_wt, pairwise ~ phase | Genotype)
+
+lmer_wt_sws <- lmer(mean_sws ~ phase*Genotype+(1|Transmitter), data = t_wt_days)
+plot(lmer_wt_sws, type=c("p","smooth"), col.line=1)
+lattice::qqmath(lmer_wt_sws)
+anova(lmer_wt_sws)
+emmeans::emmeans(lmer_wt_sws, pairwise ~ Genotype | phase)
+#emmeans::emmeans(lmer_wt_sws, pairwise ~ phase | Genotype)
+
+
+t_wt_days$ZT <- as.factor(t_wt_days$ZT)
+lmer_wts <- lmer(mean_wake ~ ZT*Genotype+(1|Transmitter), data = t_wt_days)
+plot(lmer_wts, type=c("p","smooth"), col.line=1)
+lattice::qqmath(lmer_wts)
+anova(lmer_wts)
+#emmeans::emmeans(lmer_wts, pairwise ~ ZT | Genotype)
+emmeans::emmeans(lmer_wts, pairwise ~  Genotype | ZT)
+
+
+lmer_wts_sleep <- lmer(mean_sleep ~ ZT*Genotype+(1|Transmitter), data = t_wt_days)
+plot(lmer_wts_sleep, type=c("p","smooth"), col.line=1)
+lattice::qqmath(lmer_wts_sleep)
+anova(lmer_wts_sleep)
+#emmeans::emmeans(lmer_wts, pairwise ~ ZT | Genotype)
+emmeans::emmeans(lmer_wts_sleep, pairwise ~  Genotype | ZT)
+
+lmer_wts_sws <- lmer(mean_sws ~ ZT*Genotype+(1|Transmitter), data = t_wt_days)
+plot(lmer_wts_sws, type=c("p","smooth"), col.line=1)
+lattice::qqmath(lmer_wts_sws)
+anova(lmer_wts_sws)
+#emmeans::emmeans(lmer_wts, pairwise ~ ZT | Genotype)
+emmeans::emmeans(lmer_wts_sws, pairwise ~  Genotype | ZT)
+```
