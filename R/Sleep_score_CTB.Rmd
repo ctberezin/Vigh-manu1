@@ -11,6 +11,7 @@ library(lme4)
 ```
 
 ```{r}
+#1 hour bins (by ZT)
 xl <- read.csv("../data/McKO_WT_combined.csv")
 colnames(xl)[1] <- gsub('^...','',colnames(xl)[1])
 xl
@@ -57,6 +58,7 @@ t_wt_days <- t_wt %>%
                     mean_sleep = mean(PercentSleep))
 t_wt_days
 ```
+
 
 ```{r}
 ggplot(data=SumStatwt, aes(ZT, mean_Wake, color=Genotype)) + geom_line(aes(group=Genotype)) + geom_point(stat="identity", position=position_dodge(), size=2)  + geom_errorbar(data=SumStatwt, aes(ZT,ymin=mean_Wake-se_Wake, ymax=mean_Wake+se_Wake, fill=Genotype), width=.5) + scale_y_continuous(labels = scales::percent)
@@ -121,6 +123,7 @@ t_wt$phase <- as.factor(t_wt$phase)
 t_wt$Genotype <- as.factor(t_wt$Genotype)
 t_wt_days$phase <- as.factor(t_wt_days$phase)
 t_wt_days$Genotype <- as.factor(t_wt_days$Genotype)
+
 lm_day <- wilcox.test(mean_wake ~ Genotype, data= t_wt_days)
 lm_day
 
@@ -169,3 +172,91 @@ anova(lmer_wts_ps)
 #emmeans::emmeans(lmer_wts, pairwise ~ ZT | Genotype)
 emmeans::emmeans(lmer_wts_ps, pairwise ~  Genotype | ZT)
 ```
+
+```{r}
+#30 min bins (by TimeDay)
+xl <- xl %>% dplyr::mutate(phase= ifelse(ZT>11, "dark", "light"))
+
+t_wt_30 <- xl %>%
+   group_by(Transmitter, Genotype, TimeDay, Day) %>%
+   dplyr::summarise(phase=phase,
+                    sum_wake = sum(Wake),
+                    sum_sws = sum(SWS),
+                    sum_ps = sum(PS),
+                    sum_art = sum(Artifact))
+
+t_wt_30$PercentWake <- (t_wt_30$sum_wake / (t_wt_30$sum_sws + t_wt_30$sum_wake + t_wt_30$sum_ps + t_wt_30$sum_art))
+t_wt_30$PercentSWS <- (t_wt_30$sum_sws / (t_wt_30$sum_sws + t_wt_30$sum_wake + t_wt_30$sum_ps + t_wt_30$sum_art))
+t_wt_30$PercentPS <- (t_wt_30$sum_ps / (t_wt_30$sum_sws + t_wt_30$sum_wake + t_wt_30$sum_ps + t_wt_30$sum_art))
+t_wt_30$PercentSleep <- ((t_wt_30$sum_sws + t_wt_30$sum_ps)/ (t_wt_30$sum_sws + t_wt_30$sum_wake + t_wt_30$sum_ps + t_wt_30$sum_art))
+
+t_wt_30 <- t_wt_30 %>% mutate(TimeDay = str_remove_all(TimeDay, " "))
+
+t_wt_30$TimeDay <- as.factor(t_wt_30$TimeDay)
+t_wt_30$TimeDay
+
+t_wt_30
+
+SumStatwt_30 <- dplyr::summarise(group_by(t_wt_30, Genotype, TimeDay, phase),
+n = n(),
+mean_Wake = mean(PercentWake),
+sd_Wake = sd(PercentWake),
+se_Wake = sd_Wake/sqrt(n),
+mean_Sleep = mean(PercentSleep),
+sd_Sleep = sd(PercentSleep),
+se_Sleep = sd_Sleep/sqrt(n),
+mean_SWS = mean(PercentSWS),
+sd_SWS = sd(PercentSWS),
+se_SWS = sd_SWS/sqrt(n),
+mean_PS = mean(PercentPS),
+sd_PS = sd(PercentPS),
+se_PS = sd_PS/sqrt(n))
+SumStatwt_30
+
+t_wt_days_30 <- t_wt_30 %>%
+   group_by(Transmitter, Genotype, TimeDay, phase) %>%
+   dplyr::summarise(mean_wake = mean(PercentWake),
+                    mean_sws = mean(PercentSWS),
+                    mean_ps = mean(PercentPS),
+                    mean_sleep = mean(PercentSleep))
+```
+
+```{r}
+ggplot(data=SumStatwt_30, aes(TimeDay, mean_Wake, color=Genotype)) +
+  geom_line(aes(group=Genotype)) +
+  geom_point(stat="identity", position=position_dodge(), size=2)  +
+  geom_errorbar(data=SumStatwt_30, aes(TimeDay,ymin=mean_Wake-se_Wake, ymax=mean_Wake+se_Wake, fill=Genotype), width=.5) +
+  scale_y_continuous(labels = scales::percent)
+
+
+ggplot(data=SumStatwt_30, aes(TimeDay, mean_Sleep, color=Genotype)) +
+  geom_line(aes(group=Genotype)) +
+  geom_point(stat="identity", position=position_dodge(), size=2)  +
+  geom_errorbar(data=SumStatwt_30, aes(TimeDay,ymin=mean_Sleep-se_Sleep, ymax=mean_Sleep+se_Sleep,fill=Genotype), width=.5) +
+  scale_y_continuous(labels = scales::percent)
+
+ggplot(data=SumStatwt_30, aes(TimeDay, mean_SWS, color=Genotype)) +
+  geom_line(aes(group=Genotype)) +
+  geom_point(stat="identity", position=position_dodge(), size=2)  +
+  geom_errorbar(data=SumStatwt_30, aes(TimeDay,ymin=mean_SWS-se_SWS, ymax=mean_SWS+se_SWS), width=.5) +
+  scale_y_continuous(labels = scales::percent)
+
+ggplot(data=SumStatwt_30, aes(TimeDay, mean_PS, color=Genotype)) +
+  geom_line(aes(group=Genotype)) +
+  geom_point(stat="identity", position=position_dodge(), size=2)  +
+  geom_errorbar(data=SumStatwt_30, aes(TimeDay,ymin=mean_PS-se_PS, ymax=mean_PS+se_PS), width=.5) +
+  scale_y_continuous(labels = scales::percent)
+
+```
+
+```{r}
+t_wt_days_30$phase <- as.factor(t_wt_days_30$phase)
+t_wt_days_30$Genotype <- as.factor(t_wt_days_30$Genotype)
+
+lm_day <- wilcox.test(mean_wake ~ Genotype, data= t_wt_days_30)
+lm_day
+
+lm_day <- wilcox.test(mean_sws ~ Genotype, data= t_wt_days_30)
+lm_day
+```
+
