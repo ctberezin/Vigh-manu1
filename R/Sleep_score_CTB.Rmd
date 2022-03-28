@@ -124,53 +124,77 @@ t_wt$Genotype <- as.factor(t_wt$Genotype)
 t_wt_days$phase <- as.factor(t_wt_days$phase)
 t_wt_days$Genotype <- as.factor(t_wt_days$Genotype)
 
-lm_day <- wilcox.test(mean_wake ~ Genotype, data= t_wt_days)
-lm_day
+#over entire day
+wake_day <- wilcox.test(mean_wake ~ Genotype, data= t_wt_days)
+wake_day
 
-lmer_wt <- lmer(mean_wake ~ phase*Genotype+(1|Transmitter), data = t_wt_days)
-plot(lmer_wt, type=c("p","smooth"), col.line=1)
-lattice::qqmath(lmer_wt)
-anova(lmer_wt)
-emmeans::emmeans(lmer_wt, pairwise ~ Genotype | phase)$contrasts
-emmeans::emmeans(lmer_wt, pairwise ~ phase | Genotype)
+sleep_day <- wilcox.test(mean_sleep ~ Genotype, data=t_wt_days)
+sleep_day
 
-lmer_wt_sws <- lmer(mean_sws ~ phase*Genotype+(1|Transmitter), data = t_wt_days)
-plot(lmer_wt_sws, type=c("p","smooth"), col.line=1)
-lattice::qqmath(lmer_wt_sws)
-anova(lmer_wt_sws)
-emmeans::emmeans(lmer_wt_sws, pairwise ~ Genotype | phase)
-#emmeans::emmeans(lmer_wt_sws, pairwise ~ phase | Genotype)
+sws_day <- wilcox.test(mean_sws ~ Genotype, data=t_wt_days)
+sws_day
 
+ps_day <- wilcox.test(mean_ps ~ Genotype, data=t_wt_days)
+ps_day
 
+#by phase
+lmer_wake <- lmer(mean_wake ~ phase*Genotype+(1|Transmitter), data = t_wt_days)
+plot(lmer_wake, type=c("p","smooth"), col.line=1)
+lattice::qqmath(lmer_wake)
+anova(lmer_wake)
+emmeans::emmeans(lmer_wake, pairwise ~ Genotype | phase)$contrasts
+#emmeans::emmeans(lmer_wake, pairwise ~ phase | Genotype)
+
+lmer_sleep <- lmer(mean_sleep ~ phase*Genotype+(1|Transmitter), data = t_wt_days)
+plot(lmer_sleep, type=c("p","smooth"), col.line=1)
+lattice::qqmath(lmer_sleep)
+anova(lmer_sleep)
+emmeans::emmeans(lmer_sleep, pairwise ~ Genotype | phase)$contrasts
+#emmeans::emmeans(lmer_sleep, pairwise ~ phase | Genotype)
+
+lmer_sws <- lmer(mean_sws ~ phase*Genotype+(1|Transmitter), data = t_wt_days)
+plot(lmer_sws, type=c("p","smooth"), col.line=1)
+lattice::qqmath(lmer_sws)
+anova(lmer_sws)
+emmeans::emmeans(lmer_sws, pairwise ~ Genotype | phase)$contrasts
+#emmeans::emmeans(lmer_sws, pairwise ~ phase | Genotype)
+
+lmer_ps <- lmer(mean_ps ~ phase*Genotype+(1|Transmitter), data = t_wt_days)
+plot(lmer_ps, type=c("p","smooth"), col.line=1)
+lattice::qqmath(lmer_ps)
+anova(lmer_ps)
+emmeans::emmeans(lmer_ps, pairwise ~ Genotype | phase)$contrasts
+
+#by ZT
 t_wt_days$ZT <- as.factor(t_wt_days$ZT)
-lmer_wts <- lmer(mean_wake ~ ZT*Genotype+(1|Transmitter), data = t_wt_days)
-plot(lmer_wts, type=c("p","smooth"), col.line=1)
-lattice::qqmath(lmer_wts)
-anova(lmer_wts)
-#emmeans::emmeans(lmer_wts, pairwise ~ ZT | Genotype)
-emmeans::emmeans(lmer_wts, pairwise ~  Genotype | ZT)
 
+lmer_wake_zt <- lmer(mean_wake ~ ZT*Genotype+(1|Transmitter), data = t_wt_days)
+plot(lmer_wake_zt, type=c("p","smooth"), col.line=1)
+lattice::qqmath(lmer_wake_zt)
+anova(lmer_wake_zt)
+#emmeans::emmeans(lmer_wake_zt, pairwise ~ ZT | Genotype)
+emmeans::emmeans(lmer_wake_zt, pairwise ~  Genotype | ZT)$contrasts
 
-lmer_wts_sleep <- lmer(mean_sleep ~ ZT*Genotype+(1|Transmitter), data = t_wt_days)
-plot(lmer_wts_sleep, type=c("p","smooth"), col.line=1)
-lattice::qqmath(lmer_wts_sleep)
-anova(lmer_wts_sleep)
+lmer_sleep_zt <- lmer(mean_sleep ~ ZT*Genotype+(1|Transmitter), data = t_wt_days)
+plot(lmer_sleep_zt, type=c("p","smooth"), col.line=1)
+lattice::qqmath(lmer_sleep_zt)
+anova(lmer_sleep_zt)
 #emmeans::emmeans(lmer_wts, pairwise ~ ZT | Genotype)
-emmeans::emmeans(lmer_wts_sleep, pairwise ~  Genotype | ZT)
+emmeans::emmeans(lmer_sleep_zt, pairwise ~  Genotype | ZT)$contrasts
 
 lmer_wts_sws <- lmer(mean_sws ~ ZT*Genotype+(1|Transmitter), data = t_wt_days)
 plot(lmer_wts_sws, type=c("p","smooth"), col.line=1)
 lattice::qqmath(lmer_wts_sws)
 anova(lmer_wts_sws)
 #emmeans::emmeans(lmer_wts, pairwise ~ ZT | Genotype)
-emmeans::emmeans(lmer_wts_sws, pairwise ~  Genotype | ZT)
+emmeans::emmeans(lmer_wts_sws, pairwise ~  Genotype | ZT)$contrasts
 
 lmer_wts_ps <- lmer(mean_ps ~ ZT*Genotype+(1|Transmitter), data = t_wt_days)
 plot(lmer_wts_ps, type=c("p","smooth"), col.line=1)
 lattice::qqmath(lmer_wts_ps)
 anova(lmer_wts_ps)
 #emmeans::emmeans(lmer_wts, pairwise ~ ZT | Genotype)
-emmeans::emmeans(lmer_wts_ps, pairwise ~  Genotype | ZT)
+emmeans::emmeans(lmer_wts_ps, pairwise ~  Genotype | ZT)$contrasts
 ```
 
 ```{r}
