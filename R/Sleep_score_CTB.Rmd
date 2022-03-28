@@ -2,7 +2,7 @@
 title: "Sleep_score_CTB"
 author: "nbergum"
 date: "3/25/2022"
-output: html_document
+output: pdf_document
 ---
 
 ```{r, message=FALSE, warning=FALSE}
@@ -179,22 +179,22 @@ lmer_sleep_zt <- lmer(mean_sleep ~ ZT*Genotype+(1|Transmitter), data = t_wt_days
 plot(lmer_sleep_zt, type=c("p","smooth"), col.line=1)
 lattice::qqmath(lmer_sleep_zt)
 anova(lmer_sleep_zt)
-#emmeans::emmeans(lmer_wts, pairwise ~ ZT | Genotype)
+#emmeans::emmeans(lmer_sleep_zt, pairwise ~ ZT | Genotype)
 emmeans::emmeans(lmer_sleep_zt, pairwise ~  Genotype | ZT)$contrasts
 
-lmer_wts_sws <- lmer(mean_sws ~ ZT*Genotype+(1|Transmitter), data = t_wt_days)
-plot(lmer_wts_sws, type=c("p","smooth"), col.line=1)
-lattice::qqmath(lmer_wts_sws)
-anova(lmer_wts_sws)
-#emmeans::emmeans(lmer_wts, pairwise ~ ZT | Genotype)
-emmeans::emmeans(lmer_wts_sws, pairwise ~  Genotype | ZT)$contrasts
+lmer_sws_zt <- lmer(mean_sws ~ ZT*Genotype+(1|Transmitter), data = t_wt_days)
+plot(lmer_sws_zt, type=c("p","smooth"), col.line=1)
+lattice::qqmath(lmer_sws_zt)
+anova(lmer_sws_zt)
+#emmeans::emmeans(lmer_sws_zt, pairwise ~ ZT | Genotype)
+emmeans::emmeans(lmer_sws_zt, pairwise ~  Genotype | ZT)$contrasts
 
-lmer_wts_ps <- lmer(mean_ps ~ ZT*Genotype+(1|Transmitter), data = t_wt_days)
-plot(lmer_wts_ps, type=c("p","smooth"), col.line=1)
-lattice::qqmath(lmer_wts_ps)
-anova(lmer_wts_ps)
-#emmeans::emmeans(lmer_wts, pairwise ~ ZT | Genotype)
-emmeans::emmeans(lmer_wts_ps, pairwise ~  Genotype | ZT)$contrasts
+lmer_ps_zt <- lmer(mean_ps ~ ZT*Genotype+(1|Transmitter), data = t_wt_days)
+plot(lmer_ps_zt, type=c("p","smooth"), col.line=1)
+lattice::qqmath(lmer_ps_zt)
+anova(lmer_ps_zt)
+#emmeans::emmeans(lmer_ps_zt, pairwise ~ ZT | Genotype)
+emmeans::emmeans(lmer_ps_zt, pairwise ~  Genotype | ZT)$contrasts
 ```
 
 ```{r}
