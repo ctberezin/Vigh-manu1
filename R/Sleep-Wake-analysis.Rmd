@@ -58,7 +58,23 @@ t_wt_days <- t_wt %>%
 
 
 ```{r}
-ggplot(data=SumStatwt, aes(ZT, mean_Wake, color=Genotype)) + geom_line(aes(group=Genotype)) + geom_point(stat="identity", position=position_dodge(), size=2)  + geom_errorbar(data=SumStatwt, aes(ZT,ymin=mean_Wake-se_Wake, ymax=mean_Wake+se_Wake, fill=Genotype), width=.5) + scale_y_continuous(labels = scales::percent)
+SumStatwt$ZT <- as.numeric(as.character(SumStatwt$ZT))
+
+wake_plot <- ggplot(data=SumStatwt, aes(ZT, mean_Wake, color=Genotype)) +
+  geom_line(aes(group=Genotype)) +
+  geom_point(stat="identity", position=position_dodge(), size=2)  +
+  geom_errorbar(data=SumStatwt, aes(x= ZT, ymin=mean_Wake-se_Wake,
+                                    ymax=mean_Wake+se_Wake, fill=Genotype),
+                width=.5) +
+  scale_y_continuous(labels = scales::percent,
+                     name = "Average % Time Spent Awake",
+                     limits = c(0.1,0.9)) +
+  scale_x_continuous(limits=c(-1,24), breaks = seq(from=0, to=23, by=2)) +
+  annotate("rect", xmin=12, xmax=23, ymin=-Inf, ymax=Inf,
+           alpha=0.2, fill="black") +
+  theme_bw()
+
+#ggsave("../figures/wake_plot.png", plot=wake_plot, height=5, width=9)
 
 ggplot(data=SumStatwt, aes(ZT, mean_Sleep, color=Genotype)) + geom_line(aes(group=Genotype)) + geom_point(stat="identity", position=position_dodge(), size=2)  + geom_errorbar(data=SumStatwt, aes(ZT,ymin=mean_Sleep-se_Sleep, ymax=mean_Sleep+se_Sleep,fill=Genotype), width=.5) + scale_y_continuous(labels = scales::percent)
 
@@ -104,16 +120,18 @@ t_wtp <- t_wt %>%
 ```
 
 ```{r, include=FALSE, echo=FALSE}
-ggplot(data=t_wt, aes(ZT, PercentWake, color=Genotype)) + geom_line(aes(group=Transmitter)) + geom_point() + scale_y_continuous(labels = scales::percent)
+#ggplot(data=t_wt, aes(ZT, PercentWake, color=Genotype)) + geom_line(aes(group=Transmitter)) + geom_point() + scale_y_continuous(labels = scales::percent)
 
-ggplot(data=t_wt, aes(ZT, PercentWake, color=Genotype)) + geom_line(aes(group=1)) + geom_point(stat="identity", position=position_dodge(), size=2) + facet_wrap(~Transmitter, ncol=4) + scale_y_continuous(labels = scales::percent)
+#ggplot(data=t_wt, aes(ZT, PercentWake, color=Genotype)) + geom_line(aes(group=1)) + geom_point(stat="identity", position=position_dodge(), size=2) + facet_wrap(~Transmitter, ncol=4) + scale_y_continuous(labels = scales::percent)
 
-ggplot(data=t_wt, aes(ZT, PercentSleep, color=Genotype)) + geom_line(aes(group=Transmitter)) + geom_point()+ scale_y_continuous(labels = scales::percent)
+#ggplot(data=t_wt, aes(ZT, PercentSleep, color=Genotype)) + geom_line(aes(group=Transmitter)) + geom_point()+ scale_y_continuous(labels = scales::percent)
 
-ggplot(data=t_wt, aes(ZT, PercentSleep, color=Genotype)) + geom_line(aes(group=1)) + geom_point(stat="identity", position=position_dodge(), size=2) + facet_wrap(~Transmitter, ncol = 4) + scale_y_continuous(labels = scales::percent)
+#ggplot(data=t_wt, aes(ZT, PercentSleep, color=Genotype)) + geom_line(aes(group=1)) + geom_point(stat="identity", position=position_dodge(), size=2) + facet_wrap(~Transmitter, ncol = 4) + scale_y_continuous(labels = scales::percent)
 ```
 
 ```{r}
+t_wt$ZT <- as.factor(t_wt$ZT)
+
 t_wt$phase <- as.factor(t_wt$phase)
 t_wt$Genotype <- as.factor(t_wt$Genotype)
 t_wt_days$phase <- as.factor(t_wt_days$phase)

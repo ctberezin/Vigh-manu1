@@ -15,6 +15,7 @@ library(ggthemes)
 library(forcats)
 library(ggpubr)
 library(writexl)
+library(svglite)
 ```
 
 ### Is POMC under circadian regulation? 
@@ -66,7 +67,9 @@ pomc_circ_m_summ <- pomc_circ_males %>% group_by(Time) %>%
 pomc_circ_m_summ
 
 pomc_circ_m_plot <- ggplot() +
-  stat_summary(data=pomc_circ_males, aes(x=Time, y=Relative.GE), fun = 'mean', geom="bar", fill=c("yellow", "yellow", "grey70")) +
+  stat_summary(data=pomc_circ_males, aes(x=Time, y=Relative.GE), fun = 'mean', geom="bar",
+               fill=c("yellow", "yellow", "grey70"),
+               width=0.75) +
   geom_errorbar(data=pomc_circ_m_summ, aes(x=Time, ymin=mean-sd, ymax=mean+sd), width=.2) +
   geom_point(data=pomc_circ_males, aes(x=Time, y=Relative.GE), size = 2) +
   theme_bw() %+replace%
@@ -78,7 +81,7 @@ pomc_circ_m_plot <- ggplot() +
 
 pomc_circ_m_plot
 
-#ggsave(filename="../figures/pomc_circ_m.png", plot=pomc_circ_m_plot, height=4, width=4)
+#ggsave(filename="../figures/pomc_circ_m.svg", plot=pomc_circ_m_plot, height=4, width=4)
 
 #normal
 shapiro.test(pomc_circ_males$Relative.GE)
@@ -323,7 +326,8 @@ levels(m_pomc_all$Time) <- c("ZTday", "ZTnight")
 levels(m_pomc_all_summ$Time) <- c("ZTday", "ZTnight")
 
 pomc_all_m <- ggplot() +
-  stat_summary(data=m_pomc_all, aes(x=Light, y=RelativeGE, fill=Light), fun = 'mean', geom="bar") +
+  stat_summary(data=m_pomc_all, aes(x=Light, y=RelativeGE, fill=Light),
+               fun = 'mean', geom="bar", width=0.75) +
   geom_point(data= m_pomc_all, aes(x=Light, y=RelativeGE), size=2) +
   geom_errorbar(data=m_pomc_all_summ, aes(x=Light, ymin=mean-sd, ymax=mean+sd), width=.2) +
   facet_wrap(~Time) +
@@ -341,7 +345,7 @@ pomc_all_m <- ggplot() +
 
 pomc_all_m
 
-#ggsave(filename="../figures/pomc_all_m.png", plot=pomc_all_m, height=4, width=6)
+#ggsave(filename="../figures/pomc_all_m.svg", plot=pomc_all_m, height=4, width=6)
 
 #non-normal
 shapiro.test(m_pomc_all$RelativeGE)
@@ -362,7 +366,8 @@ emmeans::emmeans(pomc_all_m_log_lm, pairwise ~ Light | Time)$contrasts
 emmeans::emmeans(pomc_all_m_log_lm, pairwise ~ Time | Light)$contrasts
 
 pomc_all_m_log <- ggplot() +
-  stat_summary(data=m_pomc_all, aes(x=Light, y=log(RelativeGE), fill=Light), fun = 'mean', geom="bar") +
+  stat_summary(data=m_pomc_all, aes(x=Light, y=log(RelativeGE), fill=Light),
+               fun = 'mean', geom="bar", width=0.75) +
   geom_point(data=m_pomc_all, aes(x=Light, y=log(RelativeGE)), size=2) +
   geom_errorbar(data=m_pomc_all_summ, aes(x=Light, ymin=log_mean-log_sd, ymax=log_mean+log_sd), width=.2) +
   facet_wrap(~Time) +
@@ -380,7 +385,7 @@ pomc_all_m_log <- ggplot() +
 
 pomc_all_m_log
 
-#ggsave(filename="../figures/pomc_all_m_log.png", plot=pomc_all_m_log, height=4, width=6)
+#ggsave(filename="../figures/pomc_all_m_log.svg", plot=pomc_all_m_log, height=4, width=6)
 
 ctrl_pomc_all_m <- m_pomc_all %>% filter(Light == "light" & Time == "day")
 
@@ -419,7 +424,8 @@ mcko_stats <- tibble::tribble(
 )
 
 mcko_plot <- ggplot() +
-  stat_summary(data=mcko, aes(x=Genotype, y=Relative.GE, fill=Genotype), fun = 'mean', geom="bar") +
+  stat_summary(data=mcko, aes(x=Genotype, y=Relative.GE, fill=Genotype),
+               fun = 'mean', geom="bar", width=0.75) +
   geom_errorbar(data=mcko_summ, aes(x=Genotype, ymin=mean-sd, ymax=mean+sd), width=0.2) +
   geom_point(data=mcko, aes(x=Genotype, y=Relative.GE), size=2) +
   theme_bw() %+replace%
@@ -431,7 +437,7 @@ mcko_plot <- ggplot() +
 
 mcko_plot
 
-ggsave(filename="../figures/mcko_fig_bars.png", plot=mcko_plot, height=4, width=3)
+#ggsave(filename="../figures/mcko_fig_bars.svg", plot=mcko_plot, height=4, width=3)
 
 mcko %>% group_by(Genotype) %>% 
   summarise(n= n(),
