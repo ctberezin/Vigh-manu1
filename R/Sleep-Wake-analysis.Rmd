@@ -12,7 +12,7 @@ library(lme4)
 
 ```{r}
 #1 hour bins (by ZT)
-xl <- read.csv("../data/McKO_WT_combined.csv")
+xl <- read.csv("../data/McKO_WT_combined_sleep.csv")
 colnames(xl)[1] <- gsub('^...','',colnames(xl)[1])
 
 t_wt <- xl %>%
