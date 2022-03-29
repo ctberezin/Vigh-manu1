@@ -73,10 +73,11 @@ SumStats_avg %>% group_by(Genotype, Sleep.Stage) %>%
 
 SumStats_phase_grps <- SumStats_phase %>% group_by(Genotype, Sleep.Stage, phase) %>% 
   summarise(n = n(),
-            mean_bout_length = mean(mean_bout_length),
+            avg_bout_length = mean(mean_bout_length),
             min_bout_length = min(min_bout_length),
-            max_bout_length = max(max_bout_length))
-head(SumStats_phase_grps)
+            max_bout_length = max(max_bout_length),
+            sd_bout_length = sd(mean_bout_length))
+SumStats_phase_grps
 
 SumStats_phase_n_grps <- SumStats_phase_n %>% group_by(Genotype, Sleep.Stage, phase) %>% 
   summarise(n = n(),
@@ -109,6 +110,7 @@ SumStats_phase %>% filter(Sleep.Stage == "S" & phase == "light") %>%
   ggplot(aes(x=Genotype, y=mean_bout_length)) +
   stat_summary(fun = 'mean', geom="bar") +
   stat_summary(fun.data = mean_se, geom = "errorbar", width=.2) +
-  geom_point()
+  geom_point() +
+  ylab("Average SWS bout length in the light phase")
 ```
 
