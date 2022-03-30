@@ -1,6 +1,6 @@
 ---
-title: "Sleep_score_CTB"
-author: "nbergum"
+title: "Sleep/Wake Analysis"
+author: "Nik Bergum & Casey-Tyler Berezin"
 date: "3/25/2022"
 output: pdf_document
 ---
@@ -11,7 +11,6 @@ library(lme4)
 ```
 
 ```{r}
-#1 hour bins (by ZT)
 xl <- read.csv("../data/McKO_WT_combined_sleep.csv")
 colnames(xl)[1] <- gsub('^...','',colnames(xl)[1])
 
@@ -63,8 +62,9 @@ SumStatwt$ZT <- as.numeric(as.character(SumStatwt$ZT))
 wake_plot <- ggplot(data=SumStatwt, aes(ZT, mean_Wake, color=Genotype)) +
   geom_line(aes(group=Genotype)) +
   geom_point(stat="identity", position=position_dodge(), size=2)  +
-  geom_errorbar(data=SumStatwt, aes(x= ZT, ymin=mean_Wake-se_Wake,
-                                    ymax=mean_Wake+se_Wake, fill=Genotype),
+  geom_errorbar(data=SumStatwt,
+                aes(x=ZT, ymin=mean_Wake-se_Wake,
+                    ymax=mean_Wake+se_Wake, color=Genotype),
                 width=.5) +
   scale_y_continuous(labels = scales::percent,
                      name = "Average % Time Spent Awake",
@@ -74,13 +74,58 @@ wake_plot <- ggplot(data=SumStatwt, aes(ZT, mean_Wake, color=Genotype)) +
            alpha=0.2, fill="black") +
   theme_bw()
 
-#ggsave("../figures/wake_plot.png", plot=wake_plot, height=5, width=9)
+#ggsave("../figures/wake_plot.svg", plot=wake_plot, height=4, width=7)
 
-ggplot(data=SumStatwt, aes(ZT, mean_Sleep, color=Genotype)) + geom_line(aes(group=Genotype)) + geom_point(stat="identity", position=position_dodge(), size=2)  + geom_errorbar(data=SumStatwt, aes(ZT,ymin=mean_Sleep-se_Sleep, ymax=mean_Sleep+se_Sleep,fill=Genotype), width=.5) + scale_y_continuous(labels = scales::percent)
+sleep_plot <- ggplot(data=SumStatwt, aes(ZT, mean_Sleep, color=Genotype)) +
+  geom_line(aes(group=Genotype)) +
+  geom_point(stat="identity", position=position_dodge(), size=2) +
+  geom_errorbar(data=SumStatwt,
+                aes(x=ZT, ymin=mean_Sleep-se_Sleep,
+                    ymax=mean_Sleep+se_Sleep, color=Genotype),
+                width=.5) +
+  scale_y_continuous(labels = scales::percent,
+                     name = "Average % Time Spent Asleep",
+                     limits = c(0.15,0.9)) +
+  scale_x_continuous(limits=c(-1,24), breaks = seq(from=0, to=23, by=2)) +
+  annotate("rect", xmin=12, xmax=23, ymin=-Inf, ymax=Inf,
+           alpha=0.2, fill="black") +
+  theme_bw()
 
-ggplot(data=SumStatwt, aes(ZT, mean_SWS, color=Genotype)) + geom_line(aes(group=Genotype)) + geom_point(stat="identity", position=position_dodge(), size=2)  + geom_errorbar(data=SumStatwt, aes(ZT,ymin=mean_SWS-se_SWS, ymax=mean_SWS+se_SWS), width=.5) + scale_y_continuous(labels = scales::percent)
+#ggsave("../figures/sleep_plot.svg", plot=sleep_plot, height=4, width=7)
 
-ggplot(data=SumStatwt, aes(ZT, mean_PS, color=Genotype)) + geom_line(aes(group=Genotype)) + geom_point(stat="identity", position=position_dodge(), size=2)  + geom_errorbar(data=SumStatwt, aes(ZT,ymin=mean_PS-se_PS, ymax=mean_PS+se_PS), width=.5) + scale_y_continuous(labels = scales::percent)
+sws_plot <- ggplot(data=SumStatwt, aes(ZT, mean_SWS, color=Genotype)) +
+  geom_line(aes(group=Genotype)) +
+  geom_point(stat="identity", position=position_dodge(), size=2)  +
+  geom_errorbar(data=SumStatwt,
+                aes(x=ZT, ymin=mean_SWS-se_SWS,
+                    ymax=mean_SWS+se_SWS, color=Genotype),
+                width=.5) +
+  scale_y_continuous(labels = scales::percent,
+                     name = "Average % Time Spent in SWS",
+                     limits = c(0.1,0.85)) +
+  scale_x_continuous(limits=c(-1,24), breaks = seq(from=0, to=23, by=2)) +
+  annotate("rect", xmin=12, xmax=23, ymin=-Inf, ymax=Inf,
+           alpha=0.2, fill="black") +
+  theme_bw()
+
+#ggsave("../figures/sws_plot.svg", plot=sws_plot, height=4, width=7)
+
+ps_plot <- ggplot(data=SumStatwt, aes(ZT, mean_PS, color=Genotype)) +
+  geom_line(aes(group=Genotype)) +
+  geom_point(stat="identity", position=position_dodge(), size=2)  +
+  geom_errorbar(data=SumStatwt,
+                aes(x=ZT, ymin=mean_PS-se_PS,
+                    ymax=mean_PS+se_PS, color=Genotype),
+                width=.5) +
+  scale_y_continuous(labels = scales::percent,
+                     name = "Average % Time Spent in Paradoxical Sleep",
+                     limits = c(0.02,0.1)) +
+  scale_x_continuous(limits=c(-1,24), breaks = seq(from=0, to=23, by=2)) +
+  annotate("rect", xmin=12, xmax=23, ymin=-Inf, ymax=Inf,
+           alpha=0.2, fill="black") +
+  theme_bw()
+
+#ggsave("../figures/ps_plot.png", plot=ps_plot, height=4, width=7)
 ```
 
 ```{r}
@@ -117,16 +162,6 @@ t_wtp <- t_wt %>%
 #  geom_bar(data=SumStatwtp, aes(phase, mean_Sleep,fill=Genotype), stat="identity", position=position_dodge(width=0.5), width=0.5) +
 #  geom_errorbar(data=SumStatwtp, aes(x=phase,ymin=mean_Sleep - se_Sleep, ymax=mean_Sleep + se_Sleep, fill=Genotype), position=position_dodge(width=0.5), width=.2,) + 
 #  geom_point(data=t_wtp, aes(x=phase, y=mean_sleep, fill=Genotype), position=position_dodge(width=0.5)) + scale_y_continuous(labels = scales::percent) + theme_bw()
-```
-
-```{r, include=FALSE, echo=FALSE}
-#ggplot(data=t_wt, aes(ZT, PercentWake, color=Genotype)) + geom_line(aes(group=Transmitter)) + geom_point() + scale_y_continuous(labels = scales::percent)
-
-#ggplot(data=t_wt, aes(ZT, PercentWake, color=Genotype)) + geom_line(aes(group=1)) + geom_point(stat="identity", position=position_dodge(), size=2) + facet_wrap(~Transmitter, ncol=4) + scale_y_continuous(labels = scales::percent)
-
-#ggplot(data=t_wt, aes(ZT, PercentSleep, color=Genotype)) + geom_line(aes(group=Transmitter)) + geom_point()+ scale_y_continuous(labels = scales::percent)
-
-#ggplot(data=t_wt, aes(ZT, PercentSleep, color=Genotype)) + geom_line(aes(group=1)) + geom_point(stat="identity", position=position_dodge(), size=2) + facet_wrap(~Transmitter, ncol = 4) + scale_y_continuous(labels = scales::percent)
 ```
 
 ```{r}
@@ -208,4 +243,15 @@ lmer_ps_zt <- lmer(mean_ps ~ ZT*Genotype+(1|Transmitter), data = t_wt_days)
 anova(lmer_ps_zt)
 #emmeans::emmeans(lmer_ps_zt, pairwise ~ ZT | Genotype)
 emmeans::emmeans(lmer_ps_zt, pairwise ~  Genotype | ZT)$contrasts
+```
+
+
+```{r, include=FALSE, echo=FALSE}
+#ggplot(data=t_wt, aes(ZT, PercentWake, color=Genotype)) + geom_line(aes(group=Transmitter)) + geom_point() + scale_y_continuous(labels = scales::percent)
+
+#ggplot(data=t_wt, aes(ZT, PercentWake, color=Genotype)) + geom_line(aes(group=1)) + geom_point(stat="identity", position=position_dodge(), size=2) + facet_wrap(~Transmitter, ncol=4) + scale_y_continuous(labels = scales::percent)
+
+#ggplot(data=t_wt, aes(ZT, PercentSleep, color=Genotype)) + geom_line(aes(group=Transmitter)) + geom_point()+ scale_y_continuous(labels = scales::percent)
+
+#ggplot(data=t_wt, aes(ZT, PercentSleep, color=Genotype)) + geom_line(aes(group=1)) + geom_point(stat="identity", position=position_dodge(), size=2) + facet_wrap(~Transmitter, ncol = 4) + scale_y_continuous(labels = scales::percent)
 ```

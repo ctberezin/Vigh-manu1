@@ -98,6 +98,12 @@ lattice::qqmath(lm_mean_length)
 anova(lm_mean_length)
 emmeans(lm_mean_length, pairwise ~ Genotype | Sleep.Stage * phase)$contrasts
 
+lm_log_mean_length <- lmer(log(mean_bout_length) ~ Sleep.Stage * phase * Genotype + (1 | Transmitter), data=SumStats_phase)
+plot(lm_mean_length, type=c("p","smooth"), col.line=1)
+lattice::qqmath(lm_mean_length)
+anova(lm_mean_length)
+emmeans(lm_mean_length, pairwise ~ Genotype | Sleep.Stage * phase)$contrasts
+
 lm_max_length <- lmer(max_bout_length ~ Sleep.Stage * phase * Genotype + (1 | Transmitter), data=SumStats_phase)
 #plot(lm_max_length, type=c("p","smooth"), col.line=1)
 #lattice::qqmath(lm_max_length)
@@ -106,11 +112,17 @@ emmeans(lm_max_length, pairwise ~ Genotype | Sleep.Stage * phase)$contrasts
 ```
 
 ```{r}
-SumStats_phase %>% filter(Sleep.Stage == "S" & phase == "light") %>% 
+sws_bouts <- SumStats_phase %>% filter(Sleep.Stage == "S" & phase == "light") %>% 
   ggplot(aes(x=Genotype, y=mean_bout_length)) +
-  stat_summary(fun = 'mean', geom="bar") +
+  stat_summary(fun = 'mean', geom="bar", width=0.75) +
   stat_summary(fun.data = mean_se, geom = "errorbar", width=.2) +
   geom_point() +
-  ylab("Average SWS bout length in the light phase")
+  ylab("Average SWS bout length in the light phase (s)") +
+  theme_bw() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2)))
+
+
+
+#ggsave(filename="../figures/sws_bouts.svg", plot=sws_bouts, height=4, width=3)
 ```
 
