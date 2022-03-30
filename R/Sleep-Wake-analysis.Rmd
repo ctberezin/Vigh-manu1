@@ -152,6 +152,34 @@ t_wtp <- t_wt %>%
                    mean_ps = mean(PercentPS),
                    mean_sleep = mean(PercentSleep))
 
+phase_sumstats <- t_wtp %>% group_by(Genotype, phase) %>% 
+  summarise(n = n(),
+            mean_wake_perc = mean(mean_wake),
+            sd_wake_perc = sd(mean_wake),
+            mean_sws_perc = mean(mean_sws),
+            sd_sws_perc = sd(mean_sws),
+            mean_ps_perc = mean(mean_ps),
+            sd_ps_perc = sd(mean_ps))
+phase_sumstats
+
+temp <- t_wt %>%
+  group_by(Transmitter, Genotype)%>%
+  dplyr::summarise(mean_wake = mean(PercentWake),
+                   mean_sws = mean(PercentSWS),
+                   mean_ps = mean(PercentPS),
+                   mean_sleep = mean(PercentSleep))
+
+temp %>% group_by(Genotype) %>% 
+  summarise(n = n(),
+            wake_perc = mean(mean_wake),
+            sd_wake = sd(mean_wake),
+            sws_perc = mean(mean_sws),
+            sd_sws = sd(mean_sws),
+            ps_perc = mean(mean_ps),
+            sd_ps = sd(mean_ps))
+
+
+
 
 #ggplot() + 
 #  geom_bar(data=SumStatwtp, aes(phase, mean_Wake,fill=Genotype), stat="identity", position=position_dodge(width=0.5), width=0.5) +
@@ -191,27 +219,21 @@ lmer_wake <- lmer(mean_wake ~ phase*Genotype+(1|Transmitter), data = t_wt_days)
 #lattice::qqmath(lmer_wake)
 anova(lmer_wake)
 emmeans::emmeans(lmer_wake, pairwise ~ Genotype | phase)$contrasts
-#emmeans::emmeans(lmer_wake, pairwise ~ phase | Genotype)
-
-lmer_sleep <- lmer(mean_sleep ~ phase*Genotype+(1|Transmitter), data = t_wt_days)
-#plot(lmer_sleep, type=c("p","smooth"), col.line=1)
-#lattice::qqmath(lmer_sleep)
-anova(lmer_sleep)
-emmeans::emmeans(lmer_sleep, pairwise ~ Genotype | phase)$contrasts
-#emmeans::emmeans(lmer_sleep, pairwise ~ phase | Genotype)
+emmeans::emmeans(lmer_wake, pairwise ~ phase | Genotype)$contrasts
 
 lmer_sws <- lmer(mean_sws ~ phase*Genotype+(1|Transmitter), data = t_wt_days)
 #plot(lmer_sws, type=c("p","smooth"), col.line=1)
 #lattice::qqmath(lmer_sws)
 anova(lmer_sws)
-emmeans::emmeans(lmer_sws, pairwise ~ Genotype | phase)$contrasts
-#emmeans::emmeans(lmer_sws, pairwise ~ phase | Genotype)
+#emmeans::emmeans(lmer_sws, pairwise ~ Genotype | phase)$contrasts
+emmeans::emmeans(lmer_sws, pairwise ~ phase | Genotype)$contrasts
 
 lmer_ps <- lmer(mean_ps ~ phase*Genotype+(1|Transmitter), data = t_wt_days)
 #plot(lmer_ps, type=c("p","smooth"), col.line=1)
 #lattice::qqmath(lmer_ps)
 anova(lmer_ps)
-emmeans::emmeans(lmer_ps, pairwise ~ Genotype | phase)$contrasts
+#emmeans::emmeans(lmer_ps, pairwise ~ Genotype | phase)$contrasts
+emmeans::emmeans(lmer_ps, pairwise ~ phase | Genotype)$contrasts
 
 #by ZT
 t_wt_days$ZT <- as.factor(t_wt_days$ZT)

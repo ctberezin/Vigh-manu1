@@ -55,7 +55,8 @@ SumStats_phase_grps <- SumStats_phase %>% group_by(Genotype, Sleep.Stage, phase)
             daily_dur = mean(daily_duration),
             avg_bout_length = mean(mean_bout),
             min_bout_length = min(min_bout),
-            max_bout_length = max(max_bout))
+            max_bout_length = max(max_bout),
+            sd_bout_length = sd(mean_bout))
 SumStats_phase_grps
 ```
 
