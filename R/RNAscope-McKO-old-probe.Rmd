@@ -53,12 +53,8 @@ abline(0,1, lty=2)
 data %>% group_by(genotype) %>% summarise(sd=sd(percent))
 
 t.test(percent ~ genotype, data)
-power_t_test(n=5, delta=94.66637-68.93279,
-             sd=5.63, ratio=1.2,
-             sd.ratio=17.953801/5.631853,
-             type="two.sample", alternative="one.sided")
 
-stat.test <- compare_means(percent ~ genotype, data, method = "t.test")
+compare_means(percent ~ genotype, data, method = "t.test")
 ```
 
 ```{r}
@@ -70,11 +66,8 @@ plot <- ggplot(data, aes(genotype, percent)) +
   theme(legend.position = "none") +
   labs(y="% ipRGCs with MOR mRNA",
        title = "RNAscope labeling of MOR mRNA") +
-  geom_bracket(
-    aes(xmin = "WT", xmax = "McKO", label = signif(p, 2)),
-    data = stat.test, y.position = 110) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
 plot
-ggsave("../figures/RNAscope_McKO_old_probe.png",
-       plot=plot, height=3, width=3)
+#ggsave("../figures/RNAscope_McKO_old_probe.png",
+#       plot=plot, height=3, width=3)
 ```

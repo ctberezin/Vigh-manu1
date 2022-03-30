@@ -95,12 +95,14 @@ emmeans(lm_n_bouts, pairwise ~ Genotype | Sleep.Stage * phase)$contrasts
 lm_mean_length <- lmer(mean_bout_length ~ Sleep.Stage * phase * Genotype + (1 | Transmitter), data=SumStats_phase)
 plot(lm_mean_length, type=c("p","smooth"), col.line=1)
 lattice::qqmath(lm_mean_length)
+hist(SumStats_phase$mean_bout_length, breaks=50)
+hist(resid(lm_mean_length), breaks=50)
 anova(lm_mean_length)
 emmeans(lm_mean_length, pairwise ~ Genotype | Sleep.Stage * phase)$contrasts
 
 lm_log_mean_length <- lmer(log(mean_bout_length) ~ Sleep.Stage * phase * Genotype + (1 | Transmitter), data=SumStats_phase)
-plot(lm_mean_length, type=c("p","smooth"), col.line=1)
-lattice::qqmath(lm_mean_length)
+plot(lm_log_mean_length, type=c("p","smooth"), col.line=1)
+lattice::qqmath(lm_log_mean_length)
 anova(lm_mean_length)
 emmeans(lm_mean_length, pairwise ~ Genotype | Sleep.Stage * phase)$contrasts
 
@@ -109,6 +111,12 @@ lm_max_length <- lmer(max_bout_length ~ Sleep.Stage * phase * Genotype + (1 | Tr
 #lattice::qqmath(lm_max_length)
 anova(lm_max_length)
 emmeans(lm_max_length, pairwise ~ Genotype | Sleep.Stage * phase)$contrasts
+
+lm_duration <- lmer(total_duration ~ Sleep.Stage * phase * Genotype + (1 | Transmitter), data=SumStats_phase)
+#plot(lm_duration, type=c("p","smooth"), col.line=1)
+#lattice::qqmath(lm_duration)
+anova(lm_duration)
+emmeans(lm_duration, pairwise ~ Genotype | Sleep.Stage * phase)$contrasts
 ```
 
 ```{r}
@@ -121,8 +129,35 @@ sws_bouts <- SumStats_phase %>% filter(Sleep.Stage == "S" & phase == "light") %>
   theme_bw() +
   scale_y_continuous(expand = expansion(mult = c(0, 0.2)))
 
-
-
+sws_bouts
 #ggsave(filename="../figures/sws_bouts.svg", plot=sws_bouts, height=4, width=3)
+```
+
+```{r}
+SumStats_phase$Sleep.Stage <- recode_factor(SumStats_phase$Sleep.Stage, S = "SWS", P = "REM", X = "Artifact", W = "Wake")
+
+length_phase_plot <- SumStats_phase %>% filter(Sleep.Stage != "Artifact") %>% 
+  ggplot(aes(x=phase, y=mean_bout_length)) +
+  facet_wrap(~Sleep.Stage, scales="free_y") +
+  geom_boxplot(aes(color=Genotype)) +
+  ylab("Average bout length (s)") +
+  theme_bw() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2)))
+
+length_phase_plot
+#ggsave(filename="../figures/length_phase_plot.svg", plot=length_phase_plot, height=4, width=7)
+
+
+daily_duration_plot <- SumStats_phase %>% filter(Sleep.Stage != "Artifact") %>% 
+  ggplot(aes(x=phase, y=total_duration)) +
+  facet_wrap(~Sleep.Stage, scales="free_y") +
+  geom_boxplot(aes(color=Genotype)) +
+  ylab("Total daily duration (s)") +
+  theme_bw() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2)))
+  
+daily_duration_plot
+#ggsave(filename="../figures/daily_duration_plot.svg", plot=daily_duration_plot, height=4, width=7)
+
 ```
 
