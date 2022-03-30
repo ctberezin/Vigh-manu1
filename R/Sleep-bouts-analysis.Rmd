@@ -111,5 +111,16 @@ length_phase_plot <- SumStats_phase %>% filter(Sleep.Stage != "Artifact") %>%
 
 length_phase_plot
 #ggsave(filename="../figures/length_phase_plot.svg", plot=length_phase_plot, height=4, width=7)
+
+daily_n_bout_plot <- SumStats_phase %>% filter(Sleep.Stage != "Artifact") %>% 
+  ggplot(aes(x=phase, y=daily_bouts)) +
+  facet_wrap(~Sleep.Stage, scales="free_y") +
+  geom_boxplot(aes(color=Genotype)) +
+  ylab("# Bouts / Day") +
+  theme_bw()
+  
+daily_n_bout_plot
+
+#ggsave(filename="../figures/daily_n_bout_plot.svg", plot=daily_n_bout_plot, height=4, width=7)
 ```
 
