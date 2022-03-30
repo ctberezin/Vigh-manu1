@@ -43,13 +43,6 @@ SumStats_daily_n <- SumStats_daily %>% group_by(Genotype, Transmitter, Sleep.Sta
   summarise(mean_n_bouts_day = mean(n_bouts))
 head(SumStats_daily_n)
 
-SumStats_avg <- bouts %>% group_by(Genotype, Transmitter, Sleep.Stage) %>% 
-  summarise(min_bout_length = min(Duration),
-            mean_bout_length = mean(Duration),
-            max_bout_length = max(Duration),
-            sd_bout_length = sd(Duration))
-head(SumStats_avg)
-
 SumStats_phase <- bouts %>% group_by(Genotype, Transmitter, Sleep.Stage, phase) %>% 
   summarise(n_bouts = n(),
             total_duration = sum(Duration),
@@ -65,12 +58,6 @@ head(SumStats_phase_n)
 ```
 
 ```{r}
-SumStats_avg %>% group_by(Genotype, Sleep.Stage) %>% 
-  summarise(n = n(),
-            mean_bout_length = mean(mean_bout_length),
-            min_bout_length = min(min_bout_length),
-            max_bout_length = max(max_bout_length))
-
 SumStats_phase_grps <- SumStats_phase %>% group_by(Genotype, Sleep.Stage, phase) %>% 
   summarise(n = n(),
             avg_bout_length = mean(mean_bout_length),
@@ -141,8 +128,7 @@ length_phase_plot <- SumStats_phase %>% filter(Sleep.Stage != "Artifact") %>%
   facet_wrap(~Sleep.Stage, scales="free_y") +
   geom_boxplot(aes(color=Genotype)) +
   ylab("Average bout length (s)") +
-  theme_bw() +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.2)))
+  theme_bw()
 
 length_phase_plot
 #ggsave(filename="../figures/length_phase_plot.svg", plot=length_phase_plot, height=4, width=7)
@@ -153,8 +139,7 @@ daily_duration_plot <- SumStats_phase %>% filter(Sleep.Stage != "Artifact") %>%
   facet_wrap(~Sleep.Stage, scales="free_y") +
   geom_boxplot(aes(color=Genotype)) +
   ylab("Total daily duration (s)") +
-  theme_bw() +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.2)))
+  theme_bw()
   
 daily_duration_plot
 #ggsave(filename="../figures/daily_duration_plot.svg", plot=daily_duration_plot, height=4, width=7)
