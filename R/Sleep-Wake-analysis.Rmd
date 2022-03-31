@@ -24,7 +24,7 @@ t_wt <- xl %>%
 t_wt$PercentWake <- (t_wt$sum_wake / (t_wt$sum_sws + t_wt$sum_wake + t_wt$sum_ps + t_wt$sum_art))
 t_wt$PercentSWS <- (t_wt$sum_sws / (t_wt$sum_sws + t_wt$sum_wake + t_wt$sum_ps + t_wt$sum_art))
 t_wt$PercentPS <- (t_wt$sum_ps / (t_wt$sum_sws + t_wt$sum_wake + t_wt$sum_ps + t_wt$sum_art))
-t_wt$PercentSleep <- ((t_wt$sum_sws + t_wt$sum_ps)/ (t_wt$sum_sws + t_wt$sum_wake + t_wt$sum_ps + t_wt$sum_art))
+t_wt$PercentArt <- ((t_wt$sum_art)/ (t_wt$sum_sws + t_wt$sum_wake + t_wt$sum_ps + t_wt$sum_art))
 
 t_wt <- t_wt %>% dplyr::mutate(phase= ifelse(ZT>11, "dark", "light"))
 
@@ -36,9 +36,6 @@ n = n(),
 mean_Wake = mean(PercentWake),
 sd_Wake = sd(PercentWake),
 se_Wake = sd_Wake/sqrt(n),
-mean_Sleep = mean(PercentSleep),
-sd_Sleep = sd(PercentSleep),
-se_Sleep = sd_Sleep/sqrt(n),
 mean_SWS = mean(PercentSWS),
 sd_SWS = sd(PercentSWS),
 se_SWS = sd_SWS/sqrt(n),
@@ -51,8 +48,7 @@ t_wt_days <- t_wt %>%
    group_by(Transmitter, Genotype, ZT, phase) %>%
    dplyr::summarise(mean_wake = mean(PercentWake),
                     mean_sws = mean(PercentSWS),
-                    mean_ps = mean(PercentPS),
-                    mean_sleep = mean(PercentSleep))
+                    mean_ps = mean(PercentPS))
 ```
 
 
@@ -134,9 +130,6 @@ n = n(),
 mean_Wake = mean(PercentWake),
 sd_Wake = sd(PercentWake),
 se_Wake = sd_Wake/sqrt(n),
-mean_Sleep = mean(PercentSleep),
-sd_Sleep = sd(PercentSleep),
-se_Sleep = sd_Sleep/sqrt(n),
 mean_SWS = mean(PercentSWS),
 sd_SWS = sd(PercentSWS),
 se_SWS = sd_SWS/sqrt(n),
@@ -150,7 +143,7 @@ t_wtp <- t_wt %>%
   dplyr::summarise(mean_wake = mean(PercentWake),
                    mean_sws = mean(PercentSWS),
                    mean_ps = mean(PercentPS),
-                   mean_sleep = mean(PercentSleep))
+                   mean_art = mean(PercentArt))
 
 phase_sumstats <- t_wtp %>% group_by(Genotype, phase) %>% 
   summarise(n = n(),
@@ -167,7 +160,9 @@ temp <- t_wt %>%
   dplyr::summarise(mean_wake = mean(PercentWake),
                    mean_sws = mean(PercentSWS),
                    mean_ps = mean(PercentPS),
-                   mean_sleep = mean(PercentSleep))
+                   mean_Art = mean(PercentArt))
+
+max(temp$mean_Art)
 
 temp %>% group_by(Genotype) %>% 
   summarise(n = n(),
