@@ -27,7 +27,7 @@ library(ggthemes)
 ```
 
 ```{r message=FALSE}
-circa <- read_excel( "../data/Animals with cycle ids adjusted.xlsx")
+circa <- read_excel( "../data/WT_McKO_activity.xlsx")
 #str(circa)
 #View(circa)
 circa <- subset(circa, Cycle == "LD", select = c(id, t, Activity, Condition, Cycle))
@@ -53,17 +53,6 @@ metadata12 <- merge(metadata1, metadata2, all = TRUE)
 setkey(metadata12, id)
 circadt <- behavr(circa, metadata12)
 #str(circadt)
-```
-
-#### Data visualization: WT vs cell-specific KO mice in light/dark cycle
-```{r}
-#ggetho(circadt, aes(z=asleep)) +
-#      stat_ld_annotations(height = 1)+
-#      stat_tile_etho() 
-#ggetho(circadt, aes(y=asleep, colour=Condition)) +
-#      stat_pop_etho() +
-#      stat_ld_annotations() +
-#      facet_grid(Cycle ~ .)
 circadt <- circadt[, phase := ifelse(t %% hours(24) < hours(12), "D", "L")]
 summary_circa <- 
   rejoin(circadt[,
@@ -74,13 +63,9 @@ summary_circa <-
            ,by=id])
 summary_circa <- melt(summary_circa, measure.vars = patterns("activity_"),
                           variable.name = "phase", value.name = "activity")
-#ggetho(circadt, aes(y=Activity, colour=Condition), time_wrap = hours(24)) +
-#      stat_pop_etho() +
-#      stat_ld_annotations() + scale_y_continuous(limits=c(0, 0.25)) +  ggtitle("Normal LD Cycle")
 ```
 
-
-### First graphs I need! -CB
+### Activity/Inactivity 24-hour Graphs
 
 ```{r}
 activity_plot <- ggetho(circadt, aes(x=t, y=Activity, colour=Condition), time_wrap = hours(24)) +
@@ -222,7 +207,7 @@ CLD(emmeans(ModelcircaLD, pairwise ~ Condition*phase))
 #geom_signif(y_position=c(0.08, 0.19), xmin=c(0.8, 1.8), xmax=c(1.2, 2.2),annotation=c("ns", "**"), tip_length=0) + scale_fill_manual(values = c("red", "blue"))
 ```
 
-### More graphs I need! -CB
+### Activity Quantified Bar Plots
 
 ```{r}
 SumStatcirca$phase <- recode_factor(SumStatcirca$phase, activity_light = "Light", activity_dark = "Dark")
@@ -271,7 +256,7 @@ se = sd/sqrt(n))
 #SumStaty
 ```
 
-### Last graph I need? -CB
+### Inactivity Quantified Bar Plots
 
 ```{r}
 SumStaty$phase <- recode_factor(SumStaty$phase, sleep_fraction_light = "Light", sleep_fraction_dark = "Dark")

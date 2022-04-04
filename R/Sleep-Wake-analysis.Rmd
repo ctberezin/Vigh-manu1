@@ -11,7 +11,7 @@ library(lme4)
 ```
 
 ```{r}
-xl <- read.csv("../data/McKO_WT_combined_sleep.csv")
+xl <- read.csv("../data/WT_McKO_combined_sleep.csv")
 colnames(xl)[1] <- gsub('^...','',colnames(xl)[1])
 
 t_wt <- xl %>%

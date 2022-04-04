@@ -18,6 +18,40 @@ library(writexl)
 library(svglite)
 ```
 
+### McKO validation
+
+```{r mcko}
+mcko <- read.csv("../data/08162021-McKO-totalret-final.csv", fileEncoding = 'UTF-8-BOM')
+mcko <- mcko %>% 
+  mutate(Genotype = fct_relevel(Genotype, c("WT", "McKO")))
+
+mcko_summ <- mcko %>% group_by(Genotype) %>%
+                      summarise(n = n(),
+                                mean = mean(Relative.GE),
+                                sd = sd(Relative.GE))
+
+mcko_plot <- ggplot() +
+  stat_summary(data=mcko, aes(x=Genotype, y=Relative.GE, fill=Genotype),
+               fun = 'mean', geom="bar", width=0.75) +
+  geom_errorbar(data=mcko_summ, aes(x=Genotype, ymin=mean-sd, ymax=mean+sd), width=0.2) +
+  geom_point(data=mcko, aes(x=Genotype, y=Relative.GE), size=2) +
+  theme_bw() %+replace%
+  theme(legend.position = "none") +
+  labs(y="Relative Gene Expression",
+       x="") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2)))
+
+mcko_plot
+
+#ggsave(filename="../figures/mcko_fig_bars.svg", plot=mcko_plot, height=4, width=3)
+
+mcko %>% group_by(Genotype) %>% 
+  summarise(n= n(),
+            mean = mean(Relative.GE),
+            sd = sd(Relative.GE))
+```
+
+
 ### Is POMC under circadian regulation? 
 
 ```{r pomc-circadian}
@@ -116,140 +150,7 @@ power.anova.test(groups=3, n=5, between.var=0.009116243,
                  within.var=0.1952332, sig.level=0.05)
 ```
 
-### Is POMC expression light-driven?
-
-```{r pomc-light-dark}
-pomc_ld <- read.csv("../data/01142022-POMC-light-dark-add'l-samps.csv", fileEncoding = 'UTF-8-BOM')
-pomc_ld <- pomc_ld %>% mutate(Time = as.factor(Time.of.Day),
-                              Light = as.factor(Light.Condition),
-                              Sex = as.factor(Sex)) %>% 
-                      mutate(Light = fct_relevel(Light, c("light", "dark"))) %>% 
-                      dplyr::select(-Time.of.Day, -Light.Condition)
-
-
-pomc_ld_mf <- ggplot(pomc_ld, aes(x=Light, y=Relative.G.E.)) +
-  theme_few() +
-  facet_wrap(~Time) +
-  stat_summary(fun = 'mean', geom="bar") +
-  geom_point(aes(col=Sex)) +
-  labs(x="",
-       y="Relative Gene Expression",
-       title = "POMC mRNA Expression")
-  
-pomc_ld_mf
-
-#ggsave(filename="../figures/pomc_ld_mf.png", plot=pomc_ld_mf, height=3, width=3)
-
-shapiro.test(pomc_ld$Relative.G.E.)
-
-#non-homogenous variance!
-car::leveneTest(Relative.G.E. ~ Sex*Light*Time, pomc_ld)
-
-#doesn't meet assumptions, take care
-pomc_ld_lm <- lm(Relative.G.E. ~ Sex*Light*Time, pomc_ld)
-
-qqnorm(pomc_ld_lm$residuals)
-qqline(pomc_ld_lm$residuals)
-
-anova(pomc_ld_lm)
-#sex is significant factor
-pomc_ld_av <- aov(pomc_ld_lm)
-TukeyHSD(pomc_ld_av)
-```
-
-```{r}
-#females only
-pomc_ld_f <- pomc_ld %>% filter(Sex == "F")
-
-pomc_ld_f_plot <- ggplot(pomc_ld_f, aes(x=Light, y=Relative.G.E.)) +
-  theme_few() +
-  facet_wrap(~Time) +
-  stat_summary(fun = 'mean', geom="bar") +
-  geom_point() +
-  labs(x="",
-       y="Relative Gene Expression",
-       title = "POMC mRNA in Females") +
-  scale_y_continuous(limits = c(0,3))
-
-pomc_ld_f_plot
-
-#ggsave(filename="../figures/pomc_ld_f.png", plot=pomc_ld_f_plot, height=3, width=3)
-```
-
-```{r}
-#males only
-pomc_ld_m <- pomc_ld %>% filter(Sex == "M")
-
-pomc_ld_m_plot <- ggplot(pomc_ld_m, aes(x=Light, y=Relative.G.E.)) +
-  theme_bw() %+replace%
-  theme(legend.position="none") +
-  facet_wrap(~Time) +
-  stat_summary(fun = 'mean', geom="bar", aes(fill=Light)) +
-  stat_summary(fun.data = mean_se, geom = "errorbar", width=.2) +
-  geom_point() +
-  labs(x="",
-       y="Relative Gene Expression") +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
-  scale_fill_manual(values=c("yellow", "grey70"))
-
-pomc_ld_m_plot
-
-#ggsave(filename="../figures/pomc_ld_m.png", plot=pomc_ld_m_plot, height=4, width=4)
-
-#non-normal
-shapiro.test(pomc_ld_m$Relative.G.E.)
-#normal
-shapiro.test(log(pomc_ld_m$Relative.G.E.))
-
-#non-homogenous variance, take care
-car::leveneTest(log(Relative.G.E.) ~ Light*Time, pomc_ld_m)
-
-pomc_ld_m_log_lm <- lm(log(Relative.G.E.) ~ Light*Time, pomc_ld_m)
-
-#res vs fitted plots looks OK, non-homogenous variance probably not a big concern
-plot(pomc_ld_m_log_lm, which=c(1,2))
-
-anova(pomc_ld_m_log_lm)
-#time is a significant factor
-#but no significant pairwise comps
-emmeans::emmeans(pomc_ld_m_log_lm, pairwise ~ Light * Time)$contrasts
-emmeans::emmeans(pomc_ld_m_log_lm, pairwise ~ Light | Time)$contrasts
-emmeans::emmeans(pomc_ld_m_log_lm, pairwise ~ Time | Light)$contrasts
-
-pomc_ld_m_log_plot <- ggplot(pomc_ld_m, aes(x=Light, y=log(Relative.G.E.))) +
-  theme_few() +
-  facet_wrap(~Time) +
-  stat_summary(fun = 'mean', geom="bar", aes(fill=Light)) +
-  stat_summary(fun.data = mean_se, geom = "errorbar", width=.2) +
-  geom_point() +
-  labs(x="",
-       y="Relative Gene Expression") +
-  ylim(ymin=-0.75, ymax=1.5) +
-  scale_fill_manual(values=c("yellow", "grey70"))
-pomc_ld_m_log_plot
-
-#ggsave(filename="../figures/pomc_ld_m_log.png", plot=pomc_ld_m_log_plot, height=3, width=3)
-
-ctrl_pomc_ld_m <- pomc_ld_m %>% filter(Light == "light" & Time == "day")
-
-pomc_ld_m_sumstats <- pomc_ld_m %>%
-  group_by(Light, Time) %>%
-  summarise(n = n(),
-            mean = mean(Relative.G.E.),
-            log_mean = mean(log(Relative.G.E.)))
-
-pomc_ld_m_sumstats
-
-#between var
-sum(3*(mean(pomc_ld_m$Relative.G.E. - mean(ctrl_pomc_ld_m$Relative.G.E.)))^2)
-#within.var
-anova(pomc_ld_m_log_lm)["Residuals", "Mean Sq"]
-power.anova.test(groups=4, n=3, between.var=1.411641,
-                 within.var=0.3873501, sig.level=0.05)
-```
-
-
-### POMC circadian + light-dark
+### POMC circadian + light-dark analysis
 
 ```{r}
 pomc_all <- read.csv("../data/02032022-POMC-circ-ld-gene-study.csv",
@@ -403,87 +304,4 @@ sum(3*(mean(m_pomc_all$RelativeGE - mean(ctrl_pomc_all_m$RelativeGE)))^2)
 anova(pomc_all_m_log_lm)["Residuals", "Mean Sq"]
 power.anova.test(groups=4, n=3, between.var=0.0006157598,
                  within.var=0.2920105, sig.level=0.05)
-```
-
-### McKO validation
-
-```{r mcko}
-mcko <- read.csv("../data/08162021-McKO-totalret-final.csv", fileEncoding = 'UTF-8-BOM')
-mcko <- mcko %>% 
-  mutate(Genotype = fct_relevel(Genotype, c("WT", "McKO")))
-
-mcko_summ <- mcko %>% group_by(Genotype) %>%
-                      summarise(n = n(),
-                                mean = mean(Relative.GE),
-                                sd = sd(Relative.GE))
-
-#p-values from SigmaPlot
-mcko_stats <- tibble::tribble(
-  ~group1, ~group2, ~p.adj,
-  "WT", "McKO", "<0.001"
-)
-
-mcko_plot <- ggplot() +
-  stat_summary(data=mcko, aes(x=Genotype, y=Relative.GE, fill=Genotype),
-               fun = 'mean', geom="bar", width=0.75) +
-  geom_errorbar(data=mcko_summ, aes(x=Genotype, ymin=mean-sd, ymax=mean+sd), width=0.2) +
-  geom_point(data=mcko, aes(x=Genotype, y=Relative.GE), size=2) +
-  theme_bw() %+replace%
-  theme(legend.position = "none") +
-  labs(y="Relative Gene Expression",
-       x="") +
-  geom_signif(y_position=1.55, xmin=1, xmax=2, annotation="***", tip_length=0.02) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.2)))
-
-mcko_plot
-
-#ggsave(filename="../figures/mcko_fig_bars.svg", plot=mcko_plot, height=4, width=3)
-
-mcko %>% group_by(Genotype) %>% 
-  summarise(n= n(),
-            mean = mean(Relative.GE),
-            sd = sd(Relative.GE))
-```
-
-### MOR mRNA in morphine vs saline treatment (retinas only)
-
-```{r mor morphine}
-treatment <- c("saline", "saline", "saline", "saline",
-               "morphine", "morphine", "morphine", "morphine")
-sample_num <- c("1","2","3","4",
-                "1","2","3","4")
-rge <- c(1.025,
-         1.054,
-         1.12,
-         0.822,
-         0.677,
-         1.054,
-         0.938,
-         1.057)
-mor <- tibble(treatment, sample_num, rge)
-mor <- mor %>% 
-  mutate(treatment = fct_relevel(treatment, c("saline", "morphine")))
-
-#p-value from SigmaPlot
-mor_stats <- tibble::tribble(
-  ~group1, ~group2, ~p.adj,
-  "saline", "morphine", "0.528"
-)
-
-mor_plot <- mor %>% ggplot(aes(x=treatment, y=rge)) +
-  stat_summary(fun = 'mean', geom="bar", fill="grey40") +
-  stat_summary(fun.data = mean_se, geom = "errorbar", width=.1, alpha=0.5) +
-  geom_point() +
-  labs(title ="Expression of MOR mRNA",
-       x="",
-       y="Relative Gene Expression") +
-  theme_few() +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
-  stat_pvalue_manual(mor_stats,
-    y.position = 1.25, step.increase = 0.1,
-    label = "p.adj")
-
-mor_plot
-
-#ggsave(filename="../figures/mor_morphine_qpcr.png", plot=mor_plot, height=4, width=3)
 ```
