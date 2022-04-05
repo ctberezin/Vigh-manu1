@@ -194,6 +194,7 @@ t_wt$phase <- as.factor(t_wt$phase)
 t_wt$Genotype <- as.factor(t_wt$Genotype)
 t_wt_days$phase <- as.factor(t_wt_days$phase)
 t_wt_days$Genotype <- as.factor(t_wt_days$Genotype)
+t_wt_days$Transmitter <- as.factor(t_wt_days$Transmitter)
 
 #over entire day
 wake_day <- wilcox.test(mean_wake ~ Genotype, data= t_wt_days)
@@ -213,6 +214,7 @@ lmer_wake <- lmer(mean_wake ~ phase*Genotype+(1|Transmitter), data = t_wt_days)
 #plot(lmer_wake, type=c("p","smooth"), col.line=1)
 #lattice::qqmath(lmer_wake)
 anova(lmer_wake)
+car::Anova(lmer_wake, type="3")
 emmeans::emmeans(lmer_wake, pairwise ~ Genotype | phase)$contrasts
 emmeans::emmeans(lmer_wake, pairwise ~ phase | Genotype)$contrasts
 

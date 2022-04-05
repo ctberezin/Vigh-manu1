@@ -49,6 +49,8 @@ mcko %>% group_by(Genotype) %>%
   summarise(n= n(),
             mean = mean(Relative.GE),
             sd = sd(Relative.GE))
+
+t.test(mcko$Relative.GE ~ mcko$Genotype)
 ```
 
 

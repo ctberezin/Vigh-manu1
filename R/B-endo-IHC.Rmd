@@ -29,8 +29,6 @@ counts <- counts %>%
   rename(mouse = Mouse,
         light = Light,
         time = Time,
-        sex = Sex,
-        age = Age,
         GCL_chat = GCLchat,
         GCL_bendo = GCLbendo,
         INL_chat = INLchat,

@@ -56,9 +56,6 @@ abline(0, 1, lty = 2)
 #it does - statistically significant decrease in McKO versus WT
 t.test(percent ~ genotype, data)
 
-#checking for a sex difference, there is none
-t.test(percent ~ sex, data)
-
 
 #checking the power
 wts_only <- data %>% filter(genotype == "WT")

@@ -195,13 +195,6 @@ SumStatcirca
 #geom_bar(aes(fill = Condition), stat="identity", position=position_dodge(), width=.5) + #geom_errorbar(aes(ymin=mean-se, ymax=mean+se, fill = Condition), width=.2, position=position_dodge(0.47)) +
 #geom_signif(y_position=c(0.08, 0.19), xmin=c(0.8, 1.8), xmax=c(1.2, 2.2),annotation=c("ns", "**"), tip_length=0) + scale_fill_manual(values = c("red", "blue")) 
 
-ModelcircaLD <- lm(activity ~ Condition*phase, data = summary_circaLD)
-Anova(ModelcircaLD, type = 3)
-options(contrasts = c("contr.sum", "contr.poly"))
-emmeans(ModelcircaLD, pairwise ~ phase|Condition)
-emmeans(ModelcircaLD, pairwise ~ Condition|phase)
-CLD(emmeans(ModelcircaLD, pairwise ~ Condition*phase))
-
 #ggplot(SumStatcirca, aes(phase, mean)) + 
 #geom_bar(aes(fill = Condition), stat="identity", position=position_dodge(), width=.5) + #geom_errorbar(aes(ymin=mean-se, ymax=mean+se, fill = Condition), width=.2, position=position_dodge(0.47)) +
 #geom_signif(y_position=c(0.08, 0.19), xmin=c(0.8, 1.8), xmax=c(1.2, 2.2),annotation=c("ns", "**"), tip_length=0) + scale_fill_manual(values = c("red", "blue"))
@@ -286,3 +279,22 @@ inact_quant_plot
 
 #ggsave(filename="../figures/inactivity_quantified_plot.svg", plot=inact_quant_plot, height=4, width=5)
 ```
+
+```{r}
+summary_melty$Condition <- as.factor(summary_melty$Condition)
+summary_melty$phase <- as.factor(summary_melty$phase)
+summary_melty$id <- as.factor(summary_melty$id)
+summary_meltyLD <- filter(summary_melty, phase != "sleep_fraction_all")
+
+ModelcircaLD <- lm(activity ~ Condition*phase, data = summary_circaLD)
+car::Anova(ModelcircaLD, type = 3)
+options(contrasts = c("contr.sum", "contr.poly"))
+emmeans(ModelcircaLD, pairwise ~ phase|Condition)$contrasts
+emmeans(ModelcircaLD, pairwise ~ Condition|phase)$contrasts
+
+Modelcircad <- lm(sleep_fraction ~ Condition*phase, data = summary_meltyLD)
+car::Anova(Modelcircad, type="3")
+emmeans(Modelcircad, pairwise ~ phase|Condition)$contrasts
+emmeans(Modelcircad, pairwise ~ Condition|phase)$contrasts
+```
+
