@@ -3,7 +3,6 @@ title: "Activity Analysis"
 author: "Nikolas Bergum"
 date: "5/8/2020"
 output:
-  word_document: default
   pdf_document: default
 ---
  
@@ -24,6 +23,8 @@ library(testthat)
 library(covr)
 library(knitr)
 library(ggthemes)
+library(lme4)
+library(lmerTest)
 ```
 
 ```{r message=FALSE}
@@ -284,17 +285,18 @@ inact_quant_plot
 summary_melty$Condition <- as.factor(summary_melty$Condition)
 summary_melty$phase <- as.factor(summary_melty$phase)
 summary_melty$id <- as.factor(summary_melty$id)
-summary_meltyLD <- filter(summary_melty, phase != "sleep_fraction_all")
 
-ModelcircaLD <- lm(activity ~ Condition*phase, data = summary_circaLD)
-car::Anova(ModelcircaLD, type = 3)
-options(contrasts = c("contr.sum", "contr.poly"))
-emmeans(ModelcircaLD, pairwise ~ phase|Condition)$contrasts
-emmeans(ModelcircaLD, pairwise ~ Condition|phase)$contrasts
+summary_circaLD$id <- as.factor(summary_circaLD$id)
+summary_meltyLD$id <- as.factor(summary_meltyLD$id)
 
-Modelcircad <- lm(sleep_fraction ~ Condition*phase, data = summary_meltyLD)
-car::Anova(Modelcircad, type="3")
-emmeans(Modelcircad, pairwise ~ phase|Condition)$contrasts
-emmeans(Modelcircad, pairwise ~ Condition|phase)$contrasts
+act_lmer <- lmer(activity ~ Condition*phase + (1|id), data = summary_circaLD)
+car::Anova(act_lmer, type = 3)
+emmeans(act_lmer, pairwise ~ phase|Condition)$contrasts
+emmeans(act_lmer, pairwise ~ Condition|phase)$contrasts
+
+inact_lmer <- lmer(sleep_fraction ~ Condition*phase + (1|id), data = summary_meltyLD)
+car::Anova(inact_lmer, type="3")
+emmeans(inact_lmer, pairwise ~ phase|Condition)$contrasts
+emmeans(inact_lmer, pairwise ~ Condition|phase)$contrasts
 ```
 

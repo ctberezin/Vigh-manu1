@@ -200,9 +200,6 @@ t_wt_days$Transmitter <- as.factor(t_wt_days$Transmitter)
 wake_day <- wilcox.test(mean_wake ~ Genotype, data= t_wt_days)
 wake_day
 
-sleep_day <- wilcox.test(mean_sleep ~ Genotype, data=t_wt_days)
-sleep_day
-
 sws_day <- wilcox.test(mean_sws ~ Genotype, data=t_wt_days)
 sws_day
 
@@ -214,7 +211,6 @@ lmer_wake <- lmer(mean_wake ~ phase*Genotype+(1|Transmitter), data = t_wt_days)
 #plot(lmer_wake, type=c("p","smooth"), col.line=1)
 #lattice::qqmath(lmer_wake)
 anova(lmer_wake)
-car::Anova(lmer_wake, type="3")
 emmeans::emmeans(lmer_wake, pairwise ~ Genotype | phase)$contrasts
 emmeans::emmeans(lmer_wake, pairwise ~ phase | Genotype)$contrasts
 
@@ -222,7 +218,7 @@ lmer_sws <- lmer(mean_sws ~ phase*Genotype+(1|Transmitter), data = t_wt_days)
 #plot(lmer_sws, type=c("p","smooth"), col.line=1)
 #lattice::qqmath(lmer_sws)
 anova(lmer_sws)
-#emmeans::emmeans(lmer_sws, pairwise ~ Genotype | phase)$contrasts
+emmeans::emmeans(lmer_sws, pairwise ~ Genotype | phase)$contrasts
 emmeans::emmeans(lmer_sws, pairwise ~ phase | Genotype)$contrasts
 
 lmer_ps <- lmer(mean_ps ~ phase*Genotype+(1|Transmitter), data = t_wt_days)
@@ -241,13 +237,6 @@ lmer_wake_zt <- lmer(mean_wake ~ ZT*Genotype+(1|Transmitter), data = t_wt_days)
 anova(lmer_wake_zt)
 #emmeans::emmeans(lmer_wake_zt, pairwise ~ ZT | Genotype)
 emmeans::emmeans(lmer_wake_zt, pairwise ~  Genotype | ZT)$contrasts
-
-lmer_sleep_zt <- lmer(mean_sleep ~ ZT*Genotype+(1|Transmitter), data = t_wt_days)
-#plot(lmer_sleep_zt, type=c("p","smooth"), col.line=1)
-#lattice::qqmath(lmer_sleep_zt)
-anova(lmer_sleep_zt)
-#emmeans::emmeans(lmer_sleep_zt, pairwise ~ ZT | Genotype)
-emmeans::emmeans(lmer_sleep_zt, pairwise ~  Genotype | ZT)$contrasts
 
 lmer_sws_zt <- lmer(mean_sws ~ ZT*Genotype+(1|Transmitter), data = t_wt_days)
 #plot(lmer_sws_zt, type=c("p","smooth"), col.line=1)
