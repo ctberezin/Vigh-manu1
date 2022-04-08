@@ -176,21 +176,19 @@ abline(25,2)
 #manova
 man_bendo_test <- manova(cbind(GCL_bendo_mm, INL_bendo_mm) ~ light * time, data=counts)
 summary(man_bendo_test)
-summary.aov(man_bendo_test)
+Anova(man_bendo_test, type="3")
+
+pf(4.8503, 2, 7)
 #light:time interaction is significant overall and for GCL, close in INL
 #look at comparisons through univariate models for each dep variable
-anova(gcl_bendo_lm)
-#summary(gcl_bendo_lm)
 Anova(gcl_bendo_lm, type="3")
-anova(inl_bendo_lm)
 Anova(inl_bendo_lm, type="3")
-summary(inl_bendo_lm)
 
-emmeans::emmeans(gcl_bendo_lm, pairwise ~ light | time)
-emmeans::emmeans(gcl_bendo_lm, pairwise ~ time | light)
+emmeans::emmeans(gcl_bendo_lm, pairwise ~ light | time)$contrasts
+emmeans::emmeans(gcl_bendo_lm, pairwise ~ time | light)$contrasts
 
-emmeans::emmeans(inl_bendo_lm, pairwise ~ light | time)
-emmeans::emmeans(inl_bendo_lm, pairwise ~ time | light)
+emmeans::emmeans(inl_bendo_lm, pairwise ~ light | time)$contrasts
+emmeans::emmeans(inl_bendo_lm, pairwise ~ time | light)$contrasts
 
 gcl_inter_plot <- ggplot() +
   stat_summary(data=counts, aes(x = time, y = GCL_bendo_mm, color = light, group = light),

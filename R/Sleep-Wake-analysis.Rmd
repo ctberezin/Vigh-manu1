@@ -168,10 +168,13 @@ temp %>% group_by(Genotype) %>%
   summarise(n = n(),
             wake_perc = mean(mean_wake),
             sd_wake = sd(mean_wake),
+            median_wake = median(mean_wake),
             sws_perc = mean(mean_sws),
             sd_sws = sd(mean_sws),
+            median_sws = median(mean_sws),
             ps_perc = mean(mean_ps),
-            sd_ps = sd(mean_ps))
+            sd_ps = sd(mean_ps),
+            median_ps = median(mean_ps))
 
 
 
@@ -199,12 +202,18 @@ t_wt_days$Transmitter <- as.factor(t_wt_days$Transmitter)
 #over entire day
 wake_day <- wilcox.test(mean_wake ~ Genotype, data= t_wt_days)
 wake_day
+wake_Zstat <- qnorm(wake_day$p.value/2)
+abs(wake_Zstat)/sqrt(9.5)
 
 sws_day <- wilcox.test(mean_sws ~ Genotype, data=t_wt_days)
 sws_day
+sws_Zstat <- qnorm(sws_day$p.value/2)
+abs(sws_Zstat)/sqrt(9.5)
 
 ps_day <- wilcox.test(mean_ps ~ Genotype, data=t_wt_days)
 ps_day
+ps_Zstat <- qnorm(ps_day$p.value/2)
+abs(ps_Zstat)/sqrt(9.5)
 
 #by phase
 lmer_wake <- lmer(mean_wake ~ phase*Genotype+(1|Transmitter), data = t_wt_days)
