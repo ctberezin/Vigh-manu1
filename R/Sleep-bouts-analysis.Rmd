@@ -10,6 +10,7 @@ library(tidyverse)
 library(lubridate)
 library(lme4)
 library(emmeans)
+options(contrasts = c("contr.sum", "contr.poly"))
 ```
 
 ```{r}

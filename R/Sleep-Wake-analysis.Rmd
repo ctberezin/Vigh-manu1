@@ -8,6 +8,7 @@ output: pdf_document
 ```{r, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(lme4)
+options(contrasts = c("contr.sum", "contr.poly"))
 ```
 
 ```{r}

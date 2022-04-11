@@ -25,6 +25,7 @@ library(knitr)
 library(ggthemes)
 library(lme4)
 library(lmerTest)
+options(contrasts = c("contr.sum", "contr.poly"))
 ```
 
 ```{r message=FALSE}
