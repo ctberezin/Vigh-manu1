@@ -68,13 +68,6 @@ pomc_circ <- pomc_circ %>% mutate(Time = as.factor(Time),
                            "18" = "12am")) %>% 
   filter(Relative.GE < 3) #remove mouse with high relative GE (data not normal)
 
-#p-values from SigmaPlot
-pomc_circ_stats <- tibble::tribble(
-  ~group1, ~group2, ~group3, ~p.adj,
-  "08:00", "16:00", "00:00", "0.865"
-)
-
-
 pomc_circ_plot <- ggplot(pomc_circ, aes(x=Time, y=Relative.GE)) +
   stat_summary(fun = 'mean', geom="bar") +
   stat_summary(fun.data = mean_se, geom = "errorbar", width=.2) +
@@ -122,19 +115,15 @@ pomc_circ_m_plot
 #normal
 shapiro.test(pomc_circ_males$Relative.GE)
 
-#non-homogenous variance
+#homogenous variance
 car::leveneTest(Relative.GE ~ Time, pomc_circ_males)
 
 pomc_circ_m_lm <- lm(Relative.GE ~ Time, pomc_circ_males)
-
-#res vs fitted plots looks OK, non-homogenous variance probably not a big concern
 plot(pomc_circ_m_lm, which=c(1,2))
 
 anova(pomc_circ_m_lm)
 #no significant comps
 emmeans::emmeans(pomc_circ_m_lm, pairwise ~ Time)$contrasts
-
-ctrl_pomc_circ_males <- pomc_circ_males %>% filter(Time == "2")
 
 pomc_circ_m_sumstats <- pomc_circ_males %>%
   group_by(Time) %>%
@@ -144,6 +133,7 @@ pomc_circ_m_sumstats <- pomc_circ_males %>%
 
 pomc_circ_m_sumstats
 
+ctrl_pomc_circ_males <- pomc_circ_males %>% filter(Time == "2")
 #between var
 sum(5*(mean(pomc_circ_males$Relative.GE - mean(ctrl_pomc_circ_males$Relative.GE)))^2)
 #within.var
@@ -164,60 +154,23 @@ pomc_all <- pomc_all %>% mutate(Sex = as.factor(Sex),
 pomc_all <- pomc_all %>% mutate(Hour = fct_relevel(Hour, c("8am", "12pm", "4pm", "12am", "1am")),
                                 Light = fct_relevel(Light, c("light", "dark")))
 
-qqnorm(pomc_all$RelativeGE)
-qqline(pomc_all$RelativeGE)
-
-qqnorm(log2(pomc_all$RelativeGE))
-qqline(log2(pomc_all$RelativeGE))
-shapiro.test(log2(pomc_all$RelativeGE))
-
-pomc_all_lm <- lm(log2(RelativeGE) ~ Sex * Light * Time, data=pomc_all)
-plot(pomc_all_lm, which=c(1))
-pomc_all_aov <- anova(pomc_all_lm)
-pomc_all_aov
-#TukeyHSD(aov(pomc_all_lm))
-
-#but can we actually group all timepoints within day and night
-day_pomc_all  <- pomc_all %>% filter(Time == "day")
-qqnorm(day_pomc_all$RelativeGE)
-qqline(day_pomc_all$RelativeGE)
-
-qqnorm(log2(day_pomc_all$RelativeGE))
-qqline(log2(day_pomc_all$RelativeGE))
-shapiro.test(log2(day_pomc_all$RelativeGE))
-day_pomc_lm <- lm(log2(RelativeGE) ~ Hour, data=day_pomc_all)
-anova(day_pomc_lm)
-
-night_pomc_all  <- pomc_all %>% filter(Time == "night")
-qqnorm(night_pomc_all$RelativeGE)
-qqline(night_pomc_all$RelativeGE)
-
-qqnorm(log2(night_pomc_all$RelativeGE))
-qqline(log2(night_pomc_all$RelativeGE))
-shapiro.test(log2(night_pomc_all$RelativeGE))
-night_pomc_lm <- lm(log2(RelativeGE) ~ Hour, data=night_pomc_all)
-anova(night_pomc_lm)
-t.test(RelativeGE ~ Hour, data=night_pomc_all)
-#indeed
-
-par(mfrow=c(1,2))
-
-pomc_all_mf <- ggplot(pomc_all, aes(x=Time, y=RelativeGE)) +
-  theme_few() +
-  facet_wrap(~Sex) +
-  stat_summary(fun = 'mean', geom="bar") +
-  geom_point(aes(col=Light))
-
-pomc_all_mf
-
-#ggsave(filename="../figures/pomc_all_mf.png", plot=pomc_all_mf)
 ```
 
 ```{r}
 #males only
 m_pomc_all <- pomc_all %>% filter(Sex == "M")
 
-m_pomc_all_summ <- m_pomc_all %>% group_by(Time, Light) %>% 
+m_pomc_all <- m_pomc_all %>% mutate(ZT = fct_relevel(Hour, c("8am", "12pm", "4pm", "12am", "1am"))) %>%
+  mutate(ZT = fct_recode(ZT,
+                           "2" = "8am",
+                           "6" = "12pm",
+                           "10" = "4pm",
+                           "18" = "12am",
+                           "19" = "1am"))
+
+head(m_pomc_all)
+
+m_pomc_all_summ <- m_pomc_all %>% group_by(ZT, Light) %>% 
   summarise(n = n(),
             mean = mean(RelativeGE),
             sd = sd(RelativeGE),
@@ -225,15 +178,13 @@ m_pomc_all_summ <- m_pomc_all %>% group_by(Time, Light) %>%
             log_sd = sd(log(RelativeGE))
             )
 
-levels(m_pomc_all$Time) <- c("ZTday", "ZTnight")
-levels(m_pomc_all_summ$Time) <- c("ZTday", "ZTnight")
+m_pomc_all_summ
 
 pomc_all_m <- ggplot() +
-  stat_summary(data=m_pomc_all, aes(x=Light, y=RelativeGE, fill=Light),
-               fun = 'mean', geom="bar", width=0.75) +
-  geom_point(data= m_pomc_all, aes(x=Light, y=RelativeGE), size=2) +
-  geom_errorbar(data=m_pomc_all_summ, aes(x=Light, ymin=mean-sd, ymax=mean+sd), width=.2) +
-  facet_wrap(~Time) +
+  stat_summary(data=m_pomc_all, aes(x=ZT, y=RelativeGE, fill=Light),
+               fun = 'mean', geom="bar", width=0.75, position="dodge") +
+  geom_point(data= m_pomc_all, aes(x=ZT, y=RelativeGE, fill=Light), size=2, position=position_dodge(0.75)) +
+  geom_errorbar(data=m_pomc_all_summ, aes(x=ZT, ymin=mean-sd, ymax=mean+sd, fill=Light), width=.2, position=position_dodge(0.75)) +
   theme_bw() %+replace%
   theme(legend.position="none",
         axis.text.x = element_text(size = 12),
@@ -247,38 +198,121 @@ pomc_all_m <- ggplot() +
   labs(y="Relative Gene Expression")
 
 pomc_all_m
+```
 
-#ggsave(filename="../figures/pomc_all_m.svg", plot=pomc_all_m, height=4, width=6)
+```{r}
+#can we group all timepoints within light/day and dark/night
+m_pomc_day  <- m_pomc_all %>% filter(Time == "day" & Light == "light")
 
-#non-normal
+shapiro.test(m_pomc_day$RelativeGE)
+car::leveneTest(RelativeGE ~ ZT, m_pomc_day)
+day_pomc_lm <- lm(RelativeGE ~ ZT, data=m_pomc_day)
+plot(day_pomc_lm, which=c(1,2))
+
+shapiro.test(log(m_pomc_day$RelativeGE))
+car::leveneTest(log(RelativeGE) ~ ZT, m_pomc_day)
+day_pomc_log_lm <- lm(log(RelativeGE) ~ ZT, data=m_pomc_day)
+plot(day_pomc_log_lm, which=c(1,2))
+
+anova(day_pomc_log_lm)
+emmeans::emmeans(day_pomc_log_lm, pairwise ~ ZT)$contrasts
+
+m_pomc_night  <- m_pomc_all %>% filter(Time == "night" & Light == "dark")
+
+shapiro.test(log(m_pomc_night$RelativeGE))
+car::leveneTest(log(RelativeGE) ~ ZT, m_pomc_night)
+night_pomc_log_lm <- lm(log(RelativeGE) ~ ZT, data=m_pomc_night)
+plot(night_pomc_log_lm, which=c(1,2))
+
+anova(night_pomc_log_lm)
+emmeans::emmeans(night_pomc_log_lm, pairwise ~ ZT)$contrasts
+
+#we can group light/day & dark/night samples
+
+m_pomc_all <- m_pomc_all %>% mutate(ZT_group = fct_recode(ZT, "ZTday" = "2",
+                                                    "ZTday" = "6",
+                                                    "ZTday" = "10",
+                                                    "ZTnight" = "18",
+                                                    "ZTnight" = "19"))
+```
+
+
+```{r}
 shapiro.test(m_pomc_all$RelativeGE)
-#normal
+car::leveneTest(RelativeGE ~ ZT_group, m_pomc_all)
+pomc_lm <- lm(RelativeGE ~ Light * ZT_group, data=m_pomc_all)
+plot(pomc_lm, which=c(1,2))
+
+m_pomc_all$Light
+
 shapiro.test(log(m_pomc_all$RelativeGE))
+car::leveneTest(log(RelativeGE) ~ ZT_group, m_pomc_all)
+car::leveneTest(log(RelativeGE) ~ Light, m_pomc_all)
+pomc_log_lm <- lm(log(RelativeGE) ~ Light * ZT_group, data=m_pomc_all)
+plot(pomc_log_lm, which=c(1,2))
 
-car::leveneTest(log(RelativeGE) ~ Light*Time, m_pomc_all)
+anova(pomc_log_lm)
+```
 
-pomc_all_m_log_lm <- lm(log(RelativeGE) ~ Light*Time, m_pomc_all)
+```{r}
+zt_group_summ <- m_pomc_all %>% group_by(ZT_group, Light) %>% 
+  summarise(n = n(),
+            mean = mean(RelativeGE),
+            sd = sd(RelativeGE),
+            log_mean = mean(log(RelativeGE)),
+            log_sd = sd(log(RelativeGE))
+            )
 
-plot(pomc_all_m_log_lm, which=c(1,2))
+zt_group_summ
 
-#no significant factors
-anova(pomc_all_m_log_lm)
-
-emmeans::emmeans(pomc_all_m_log_lm, pairwise ~ Light * Time)$contrasts
-emmeans::emmeans(pomc_all_m_log_lm, pairwise ~ Light | Time)$contrasts
-emmeans::emmeans(pomc_all_m_log_lm, pairwise ~ Time | Light)$contrasts
-
-pomc_all_m_log <- ggplot() +
-  stat_summary(data=m_pomc_all, aes(x=Light, y=log(RelativeGE), fill=Light),
-               fun = 'mean', geom="bar", width=0.75) +
-  geom_point(data=m_pomc_all, aes(x=Light, y=log(RelativeGE)), size=2) +
-  geom_errorbar(data=m_pomc_all_summ, aes(x=Light, ymin=log_mean-log_sd, ymax=log_mean+log_sd), width=.2) +
-  facet_wrap(~Time) +
+pomc_plot <- ggplot() +
+  stat_summary(data=m_pomc_all,
+               aes(x=Light, y=RelativeGE, fill=Light),
+               fun = 'mean', geom="bar",
+               width=0.75, position="dodge") +
+  geom_point(data= m_pomc_all,
+             aes(x=Light, y=RelativeGE, fill=Light),
+             size=2,
+             position=position_dodge(0.75)) +
+  geom_errorbar(data=zt_group_summ,
+                aes(x=Light, ymin=mean-sd, ymax=mean+sd, fill=Light),
+                width=.2,
+                position=position_dodge(0.75)) +
+  facet_wrap(~ZT_group) +
   theme_bw() %+replace%
   theme(legend.position="none",
-        axis.title.x = element_blank(),
         axis.text.x = element_text(size = 12),
         strip.text.x = element_text(size=14),
+        axis.title.x = element_blank(),
+        panel.spacing = unit(0,"pt"),
+        plot.background = element_rect(fill = "transparent",colour = NA),
+        panel.background = element_rect(fill = "transparent",colour = NA)) +
+  scale_fill_manual(values=c("yellow", "grey70")) +
+  labs(y="Relative Gene Expression") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
+
+#ggsave(filename="../figures/pomc_all_m.svg", plot=pomc_all_m_log, height=4, width=6)
+
+pomc_plot
+
+pomc_log_plot <- ggplot() +
+  stat_summary(data=m_pomc_all,
+               aes(x=Light, y=log(RelativeGE), fill=Light),
+               fun = 'mean', geom="bar",
+               width=0.75, position="dodge") +
+  geom_point(data= m_pomc_all,
+             aes(x=Light, y=log(RelativeGE), fill=Light),
+             size=2,
+             position=position_dodge(0.75)) +
+  geom_errorbar(data=zt_group_summ, 
+              aes(x=Light, ymin=log_mean-log_sd, ymax=log_mean+log_sd, fill=Light),
+              width=.2, position=position_dodge(0.75)) +
+  facet_wrap(~ZT_group) +
+  theme_bw() %+replace%
+  theme(legend.position="none",
+        axis.text.x = element_text(size = 12),
+        strip.text.x = element_text(size=14),
+        axis.title.x = element_blank(),
         panel.spacing = unit(0,"pt"),
         plot.background = element_rect(fill = "transparent",colour = NA),
         panel.background = element_rect(fill = "transparent",colour = NA)) +
@@ -286,24 +320,8 @@ pomc_all_m_log <- ggplot() +
   labs(y="log(Relative Gene Expression)") +
   ylim(ymin=-0.75, ymax=2.2)
 
-pomc_all_m_log
+pomc_log_plot
 
 #ggsave(filename="../figures/pomc_all_m_log.svg", plot=pomc_all_m_log, height=4, width=6)
-
-ctrl_pomc_all_m <- m_pomc_all %>% filter(Light == "light" & Time == "day")
-
-pomc_all_m_sumstats <- m_pomc_all %>%
-  group_by(Light, Time) %>%
-  summarise(n = n(),
-            mean = mean(RelativeGE),
-            log_mean = mean(log(RelativeGE)))
-
-pomc_all_m_sumstats
-
-#between var
-sum(3*(mean(m_pomc_all$RelativeGE - mean(ctrl_pomc_all_m$RelativeGE)))^2)
-#within.var
-anova(pomc_all_m_log_lm)["Residuals", "Mean Sq"]
-power.anova.test(groups=4, n=3, between.var=0.0006157598,
-                 within.var=0.2920105, sig.level=0.05)
 ```
+
