@@ -31,6 +31,31 @@ head(bouts)
 ```
 
 ```{r}
+foo <- bouts %>% group_by(Genotype, Transmitter, Day, phase) %>% select(Sleep.Stage)
+foo <- foo %>% mutate(Transition = str_c(lag(Sleep.Stage), ">", Sleep.Stage))
+head(foo)
+
+
+transitions_summary <- foo %>% group_by(Genotype, Transmitter, Transition, phase) %>%
+  filter(Transition %in% c("W>S", "S>W", "S>P", "P>S", "W>P", "P>W")) %>% summarise(n = n(),
+                                                                                    Days = max(Day),
+                                                                                    n_day = mean(n/Days))
+
+transitions_summary %>% ggplot(aes(x=phase, y=n_day, color=Genotype)) +
+  geom_point(position=position_dodge(0.75)) +
+  facet_wrap(~Transition)
+
+transi_lm <- lmer(log(n_day) ~ Genotype * Transition * phase + (1|Transmitter), data=transitions_summary)
+car::Anova(transi_lm, type="3")
+
+plot(transi_lm, type=c("p","smooth"), col.line=1)
+lattice::qqmath(transi_lm)
+
+emmeans(transi_lm, pairwise ~ Genotype | phase * Transition)$contrasts
+```
+
+
+```{r}
 SumStats_daily <- bouts %>% group_by(Genotype, Transmitter, Sleep.Stage, Day, phase) %>% 
   summarise(n_bouts = n(),
             total_duration = sum(Duration),
