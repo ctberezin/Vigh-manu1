@@ -81,7 +81,7 @@ mor_plot <- ggplot() +
 
 mor_plot
 
-ggsave(filename="../figures/mor_retina_hypothalamus.svg", plot=mor_plot, height=4, width=6)
+#ggsave(filename="../figures/mor_retina_hypothalamus.svg", plot=mor_plot, height=4, width=6)
 ```
 
 ```{r}
@@ -122,7 +122,27 @@ car::leveneTest(log(RelativeGE) ~ Genotype, mor_retina)
 #significantly different in the retina
 t.test(log(mor_retina$RelativeGE) ~ mor_retina$Genotype)
 
+mor_retina <- mor_retina %>% mutate(log_rge = log(RelativeGE))
 
+mor_ret_summ <- mor_retina %>% group_by(Genotype) %>% 
+      summarise(n = n(),
+                log_mean = mean(log_rge),
+                log_sd = sd(log_rge))
+
+mor_ret_log_plot <- ggplot() +
+  stat_summary(data=mor_retina, aes(x=Genotype, y=log_rge, fill=Genotype),
+               fun = 'mean', geom="bar", width=0.75) +
+  geom_errorbar(data=mor_ret_summ, aes(x=Genotype, ymin=log_mean-log_sd, ymax=log_mean+log_sd), width=0.2) +
+  geom_point(data=mor_retina, aes(x=Genotype, y=log_rge), size=2) +
+  theme_bw() %+replace%
+  theme(legend.position = "none") +
+  labs(y="Relative Gene Expression",
+       x="") +
+  ylim(-1, 0.7)
+
+mor_ret_log_plot
+
+#ggsave(filename="../figures/mor_retina_log.svg", plot=mor_ret_log_plot, height=4, width=3)
 
 #hypothalamus analysis
 mor_hyp_lm <- lm(RelativeGE ~ Genotype, mor_hyp)
