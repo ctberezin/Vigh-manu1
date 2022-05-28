@@ -53,6 +53,95 @@ mcko %>% group_by(Genotype) %>%
 t.test(mcko$Relative.GE ~ mcko$Genotype)
 ```
 
+### McKO validation, retina & hypothalamus
+
+```{r}
+mor <- read.csv("../data/MOR-hypothalamus-results.csv", fileEncoding = 'UTF-8-BOM')
+mor <- mor %>% 
+  mutate(Genotype = fct_relevel(Genotype, c("WT", "McKO")),
+         Tissue = fct_relevel(Tissue, c("retina", "hypothalamus"))) %>% 
+  filter(Sample != "WT5-R" & Sample != "WT5-H")
+
+mor_summ <- mor %>% group_by(Genotype, Tissue) %>%
+                      summarise(n = n(),
+                                mean = mean(RelativeGE),
+                                sd = sd(RelativeGE))
+
+mor_plot <- ggplot() +
+  stat_summary(data=mor, aes(x=Genotype, y=RelativeGE, fill=Genotype),
+               fun = 'mean', geom="bar", width=0.75) +
+  geom_errorbar(data=mor_summ, aes(x=Genotype, ymin=mean-sd, ymax=mean+sd), width=0.2) +
+  geom_point(data=mor, aes(x=Genotype, y=RelativeGE), size=2) +
+  facet_wrap(~Tissue, scales="free") +
+  theme_bw() %+replace%
+  theme(legend.position = "none") +
+  labs(y="Relative Gene Expression",
+       x="") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.25)))
+
+mor_plot
+
+ggsave(filename="../figures/mor_retina_hypothalamus.svg", plot=mor_plot, height=4, width=6)
+```
+
+```{r}
+#bad
+mor_lm <- lm(RelativeGE ~ Genotype * Tissue, mor)
+plot(mor_lm, which=c(1,2))
+
+#better
+mor_log_lm <- lm(log(RelativeGE) ~ Genotype * Tissue, mor)
+plot(mor_log_lm, which=c(1,2))
+#ok
+car::leveneTest(log(mor$RelativeGE) ~ Genotype * Tissue, mor)
+#still doesn't pass
+shapiro.test(log(mor$RelativeGE))
+
+
+
+#better off separating the tissues to achieve normality
+
+mor_retina <- mor %>% filter(Tissue == "retina")
+mor_hyp <- mor %>% filter(Tissue == "hypothalamus")
+
+
+#retina analysis
+mor_ret_lm <- lm(RelativeGE ~ Genotype, mor_retina)
+plot(mor_ret_lm, which=c(1,2))
+#better homogenous variance but normality looks same
+mor_ret_log_lm <- lm(log(RelativeGE) ~ Genotype, mor_retina)
+plot(mor_ret_log_lm, which=c(1,2))
+
+shapiro.test(mor_retina$RelativeGE)
+#normality slightly better, both pass
+shapiro.test(log(mor_retina$RelativeGE))
+car::leveneTest(RelativeGE ~ Genotype, mor_retina)
+#homogenous variance definitely better
+car::leveneTest(log(RelativeGE) ~ Genotype, mor_retina)
+
+#significantly different in the retina
+t.test(log(mor_retina$RelativeGE) ~ mor_retina$Genotype)
+
+
+
+#hypothalamus analysis
+mor_hyp_lm <- lm(RelativeGE ~ Genotype, mor_hyp)
+plot(mor_hyp_lm, which=c(1,2))
+#not much better on either front, homogenous variance looks good, let's look into normality further
+mor_hyp_log_lm <- lm(log(RelativeGE) ~ Genotype, mor_hyp)
+plot(mor_hyp_log_lm, which=c(1,2))
+
+#passes just fine
+shapiro.test(mor_hyp$RelativeGE)
+
+#as expected, both fine
+car::leveneTest(RelativeGE ~ Genotype, mor_hyp)
+car::leveneTest(log(RelativeGE) ~ Genotype, mor_hyp)
+
+#not significantly different in hypothalamus
+t.test(mor_hyp$RelativeGE ~ mor_hyp$Genotype)
+```
+
 
 ### Is POMC under circadian regulation? 
 
