@@ -329,6 +329,7 @@ m_pomc_all <- m_pomc_all %>% mutate(ZT_group = fct_recode(ZT, "ZTday" = "2",
 ```{r}
 shapiro.test(m_pomc_all$RelativeGE)
 car::leveneTest(RelativeGE ~ ZT_group, m_pomc_all)
+car::leveneTest(RelativeGE ~ Light, m_pomc_all)
 pomc_lm <- lm(RelativeGE ~ Light * ZT_group, data=m_pomc_all)
 plot(pomc_lm, which=c(1,2))
 
@@ -341,6 +342,13 @@ pomc_log_lm <- lm(log(RelativeGE) ~ Light * ZT_group, data=m_pomc_all)
 plot(pomc_log_lm, which=c(1,2))
 
 anova(pomc_log_lm)
+
+pomc_log_zt_wilcox <- wilcox.test(log(RelativeGE) ~ ZT_group, data= m_pomc_all)
+pomc_log_zt_wilcox
+pomc_log_light_wilcox <- wilcox.test(log(RelativeGE) ~ Light, data= m_pomc_all)
+pomc_log_light_wilcox
+wake_Zstat <- qnorm(wake_day$p.value/2)
+abs(wake_Zstat)/sqrt(9.5)
 ```
 
 ```{r}
