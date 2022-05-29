@@ -16,6 +16,9 @@ library(forcats)
 library(ggpubr)
 library(writexl)
 library(svglite)
+library(lme4)
+library(lmerTest)
+library(emmeans)
 ```
 
 ### McKO validation
@@ -85,81 +88,51 @@ mor_plot
 ```
 
 ```{r}
+mor <- mor %>% mutate(Sample = str_sub(Sample, start=1L, end=-3L))
 #bad
-mor_lm <- lm(RelativeGE ~ Genotype * Tissue, mor)
-plot(mor_lm, which=c(1,2))
+mor_lmer <- lmer(RelativeGE ~ Genotype * Tissue + (1 | Sample), mor)
+plot(mor_lmer, type=c("p","smooth"), col.line=1)
+lattice::qqmath(mor_lmer)
+#much better
+mor_log_lmer <- lmer(log(RelativeGE) ~ Genotype * Tissue + (1 | Sample), mor)
+plot(mor_log_lmer, type=c("p","smooth"), col.line=1)
+lattice::qqmath(mor_log_lmer)
 
-#better
-mor_log_lm <- lm(log(RelativeGE) ~ Genotype * Tissue, mor)
-plot(mor_log_lm, which=c(1,2))
-#ok
-car::leveneTest(log(mor$RelativeGE) ~ Genotype * Tissue, mor)
-#still doesn't pass
-shapiro.test(log(mor$RelativeGE))
-
-
-
-#better off separating the tissues to achieve normality
-
-mor_retina <- mor %>% filter(Tissue == "retina")
-mor_hyp <- mor %>% filter(Tissue == "hypothalamus")
+anova(mor_log_lmer)
+emmeans(mor_log_lmer, pairwise ~ Genotype | Tissue)$contrasts
+emmeans(mor_log_lmer, pairwise ~ Tissue | Genotype)$contrasts
 
 
-#retina analysis
-mor_ret_lm <- lm(RelativeGE ~ Genotype, mor_retina)
-plot(mor_ret_lm, which=c(1,2))
-#better homogenous variance but normality looks same
-mor_ret_log_lm <- lm(log(RelativeGE) ~ Genotype, mor_retina)
-plot(mor_ret_log_lm, which=c(1,2))
+mor <- mor %>% mutate(log_rge = log(RelativeGE))
 
-shapiro.test(mor_retina$RelativeGE)
-#normality slightly better, both pass
-shapiro.test(log(mor_retina$RelativeGE))
-car::leveneTest(RelativeGE ~ Genotype, mor_retina)
-#homogenous variance definitely better
-car::leveneTest(log(RelativeGE) ~ Genotype, mor_retina)
+mor_summ$log_mean <- mor %>% group_by(Genotype, Tissue) %>%
+  summarise(log_mean = mean(log_rge)) %>%
+  ungroup() %>%
+  pull(log_mean)
 
-#significantly different in the retina
-t.test(log(mor_retina$RelativeGE) ~ mor_retina$Genotype)
+mor_summ$log_sd <- mor %>% group_by(Genotype, Tissue) %>%
+  summarise(log_sd = sd(log_rge)) %>%
+  ungroup() %>%
+  pull(log_sd)
 
-mor_retina <- mor_retina %>% mutate(log_rge = log(RelativeGE))
 
-mor_ret_summ <- mor_retina %>% group_by(Genotype) %>% 
-      summarise(n = n(),
-                log_mean = mean(log_rge),
-                log_sd = sd(log_rge))
+# log_sd = sd(log_rge)
 
-mor_ret_log_plot <- ggplot() +
-  stat_summary(data=mor_retina, aes(x=Genotype, y=log_rge, fill=Genotype),
+mor_log_plot <- ggplot() +
+  stat_summary(data=mor, aes(x=Genotype, y=log_rge, fill=Genotype),
                fun = 'mean', geom="bar", width=0.75) +
-  geom_errorbar(data=mor_ret_summ, aes(x=Genotype, ymin=log_mean-log_sd, ymax=log_mean+log_sd), width=0.2) +
-  geom_point(data=mor_retina, aes(x=Genotype, y=log_rge), size=2) +
+  geom_errorbar(data=mor_summ, aes(x=Genotype, ymin=log_mean-log_sd, ymax=log_mean+log_sd), width=0.2) +
+  geom_point(data=mor, aes(x=Genotype, y=log_rge), size=2) +
+  facet_wrap(~Tissue) +
   theme_bw() %+replace%
   theme(legend.position = "none") +
   labs(y="Relative Gene Expression",
        x="") +
-  ylim(-1, 0.7)
+  ylim(-1, 3.3)
 
-mor_ret_log_plot
+mor_log_plot
 
-#ggsave(filename="../figures/mor_retina_log.svg", plot=mor_ret_log_plot, height=4, width=3)
-
-#hypothalamus analysis
-mor_hyp_lm <- lm(RelativeGE ~ Genotype, mor_hyp)
-plot(mor_hyp_lm, which=c(1,2))
-#not much better on either front, homogenous variance looks good, let's look into normality further
-mor_hyp_log_lm <- lm(log(RelativeGE) ~ Genotype, mor_hyp)
-plot(mor_hyp_log_lm, which=c(1,2))
-
-#passes just fine
-shapiro.test(mor_hyp$RelativeGE)
-
-#as expected, both fine
-car::leveneTest(RelativeGE ~ Genotype, mor_hyp)
-car::leveneTest(log(RelativeGE) ~ Genotype, mor_hyp)
-
-#not significantly different in hypothalamus
-t.test(mor_hyp$RelativeGE ~ mor_hyp$Genotype)
+#ggsave(filename="../figures/mor_log.svg", plot=mor_log_plot, height=4, width=6)
 ```
 
 
@@ -360,6 +333,12 @@ car::leveneTest(log(RelativeGE) ~ ZT_group, m_pomc_all)
 car::leveneTest(log(RelativeGE) ~ Light, m_pomc_all)
 pomc_log_lm <- lm(log(RelativeGE) ~ Light * ZT_group, data=m_pomc_all)
 plot(pomc_log_lm, which=c(1,2))
+
+shapiro.test(sqrt(m_pomc_all$RelativeGE))
+car::leveneTest(sqrt(RelativeGE) ~ ZT_group, m_pomc_all)
+car::leveneTest(sqrt(RelativeGE) ~ Light, m_pomc_all)
+pomc_sqrt_lm <- lm(sqrt(RelativeGE) ~ Light * ZT_group, data=m_pomc_all)
+plot(pomc_sqrt_lm, which=c(1,2))
 
 anova(pomc_log_lm)
 
