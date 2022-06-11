@@ -215,13 +215,6 @@ pomc_circ_m_sumstats <- pomc_circ_males %>%
 
 pomc_circ_m_sumstats
 
-ctrl_pomc_circ_males <- pomc_circ_males %>% filter(Time == "2")
-#between var
-sum(5*(mean(pomc_circ_males$Relative.GE - mean(ctrl_pomc_circ_males$Relative.GE)))^2)
-#within.var
-anova(pomc_circ_m_lm)["Residuals", "Mean Sq"]
-power.anova.test(groups=3, n=5, between.var=0.009116243,
-                 within.var=0.1952332, sig.level=0.05)
 ```
 
 ### POMC circadian + light-dark analysis
@@ -434,7 +427,9 @@ pomc_hyp
 pomc_hyp_summ <- pomc_hyp %>% group_by(Tissue, Condition) %>%
                       summarise(n = n(),
                                 mean = mean(RGE),
-                                sd = sd(RGE))
+                                sd = sd(RGE),
+                                log_mean = mean(log(RGE)),
+                                log_sd = sd(log(RGE)))
 pomc_hyp_summ
 
 pomc_hyp_plot <- ggplot() +
@@ -447,9 +442,11 @@ pomc_hyp_plot <- ggplot() +
   theme(legend.position = "none") +
   labs(y="Relative Gene Expression",
        x="") +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.25)))
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
 
 pomc_hyp_plot
+
+ggsave(filename="../figures/pomc_hyp_ret.png", plot=pomc_hyp_plot, height=4, width=4)
 
 
 #bad
@@ -469,21 +466,23 @@ emmeans(pomc_hyp_log_lmer, pairwise ~ Tissue | Condition)$contrasts
 pomc_hyp_log_plot <- ggplot() +
   stat_summary(data=pomc_hyp, aes(x=Condition, y=log(RGE), fill=Condition),
                fun = 'mean', geom="bar", width=0.75) +
-  #geom_errorbar(data=pomc_hyp_summ, aes(x=Condition, ymin=mean-sd, ymax=mean+sd), width=0.2) +
+  geom_errorbar(data=pomc_hyp_summ, aes(x=Condition, ymin=log_mean-log_sd, ymax=log_mean+log_sd), width=0.2) +
   geom_point(data=pomc_hyp, aes(x=Condition, y=log(RGE)), size=2) +
   facet_wrap(~Tissue, scales="free") +
   theme_bw() %+replace%
   theme(legend.position = "none") +
-  labs(y="Relative Gene Expression",
+  labs(y="log(Relative Gene Expression)",
        x="")
 
 pomc_hyp_log_plot
+
+ggsave(filename="../figures/pomc_hyp_ret_log.png", plot=pomc_hyp_log_plot, height=4, width=4)
 ```
 
 
 
 ```{r}
-pomc_hyp <- read.csv("../data/06092022-POMC-hypothalamus - Copy.csv",
+pomc_hyp <- read.csv("../data/06092022-POMC-hypothalamus-only.csv",
                      fileEncoding = 'UTF-8-BOM')
 pomc_hyp <- pomc_hyp %>% mutate(Condition = as.factor(Condition))
 pomc_hyp
@@ -491,7 +490,9 @@ pomc_hyp
 pomc_hyp_summ <- pomc_hyp %>% group_by(Condition) %>%
                       summarise(n = n(),
                                 mean = mean(RGE),
-                                sd = sd(RGE))
+                                sd = sd(RGE),
+                                log_mean = mean(log(RGE)),
+                                log_sd = sd(log(RGE)))
 pomc_hyp_summ
 
 pomc_hyp_plot <- ggplot() +
@@ -507,6 +508,7 @@ pomc_hyp_plot <- ggplot() +
 
 pomc_hyp_plot
 
+ggsave(filename="../figures/pomc_hyp.png", plot=pomc_hyp_plot, height=4, width=4)
 
 #bad
 pomc_hyp_lm <- lm(RGE ~ Condition, pomc_hyp)
@@ -521,13 +523,15 @@ t.test(log(RGE) ~ Condition, pomc_hyp)
 pomc_hyp_log_plot <- ggplot() +
   stat_summary(data=pomc_hyp, aes(x=Condition, y=log(RGE), fill=Condition),
                fun = 'mean', geom="bar", width=0.75) +
-  #geom_errorbar(data=pomc_hyp_summ, aes(x=Condition, ymin=mean-sd, ymax=mean+sd), width=0.2) +
+  geom_errorbar(data=pomc_hyp_summ, aes(x=Condition, ymin=log_mean-log_sd, ymax=log_mean+log_sd), width=0.2) +
   geom_point(data=pomc_hyp, aes(x=Condition, y=log(RGE)), size=2) +
   theme_bw() %+replace%
   theme(legend.position = "none") +
-  labs(y="Relative Gene Expression",
+  labs(y="log(Relative Gene Expression)",
        x="")
 
 pomc_hyp_log_plot
+
+ggsave(filename="../figures/pomc_hyp_log.png", plot=pomc_hyp_log_plot, height=4, width=4)
 ```
 
