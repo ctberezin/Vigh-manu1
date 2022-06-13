@@ -217,6 +217,78 @@ pomc_circ_m_sumstats
 
 ```
 
+
+
+### POMC light-dark
+
+```{r}
+pomc_ld <- read.csv("../data/pomc-ld-m.csv",
+                      fileEncoding = 'UTF-8-BOM')
+pomc_ld <- pomc_ld %>% mutate(Sample = as.factor(Sample),
+                              Time = as.factor(Time),
+                              Light = fct_relevel(as.factor(Light), c("light", "dark")),
+                              Run = as.factor(Run))
+
+pomc_ld_summ <- pomc_ld %>% group_by(Time, Light) %>%
+                    summarise(n = n(),
+                              mean = mean(RGE),
+                              sd = sd(RGE))
+
+pomc_ld_summ
+
+pomc_ld_plot <- ggplot() +
+  stat_summary(data=pomc_ld, aes(x=Time, y=RGE, fill=Light), fun = 'mean', geom="bar",
+               width=0.75, position="dodge") +
+  geom_errorbar(data=pomc_ld_summ, aes(x=Time, ymin=mean-sd, ymax=mean+sd, fill=Light),
+                width=.2, position=position_dodge(0.75)) +
+  geom_point(data=pomc_ld, aes(x=Time, y=RGE, fill=Light), size = 2, position=position_dodge(0.75)) +
+  theme_bw() %+replace%
+  theme(plot.background = element_rect(fill = "transparent",colour = NA),
+        panel.background = element_rect(fill = "transparent",colour = NA)) +
+  labs(x="Zeitgeber Time (ZT)",
+       y="Relative Gene Expression") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2))) +
+  scale_fill_manual(values=c("yellow", "grey70"))
+
+pomc_ld_plot
+
+ggsave(filename="../figures/pomc_ld.png", plot=pomc_ld_plot, height=4, width=4)
+```
+
+```{r}
+pomc_ld_lm <- lm(log(RGE) ~ Time * Light, pomc_ld)
+plot(pomc_ld_lm, which=c(1,2))
+
+car::Anova(pomc_ld_lm, type="3")
+emmeans(pomc_ld_lm, pairwise ~ Time | Light)$contrasts
+emmeans(pomc_ld_lm, pairwise ~ Light | Time)$contrasts
+
+pomc_ld_summ <- pomc_ld %>% group_by(Time, Light) %>%
+                    summarise(log_mean = mean(log(RGE)),
+                              log_sd = sd(log(RGE)))
+
+pomc_ld_summ
+
+pomc_ld_log_plot <- ggplot() +
+  stat_summary(data=pomc_ld, aes(x=Time, y=log(RGE), fill=Light), fun = 'mean', geom="bar",
+               width=0.75, position="dodge") +
+  geom_errorbar(data=pomc_ld_summ, aes(x=Time, ymin=log_mean-log_sd, ymax=log_mean+log_sd, fill=Light),
+                width=.2, position=position_dodge(0.75)) +
+  geom_point(data=pomc_ld, aes(x=Time, y=log(RGE), fill=Light), size = 2, position=position_dodge(0.75)) +
+  theme_bw() %+replace%
+  theme(plot.background = element_rect(fill = "transparent",colour = NA),
+        panel.background = element_rect(fill = "transparent",colour = NA)) +
+  labs(x="Zeitgeber Time (ZT)",
+       y="Relative Gene Expression") +
+  scale_fill_manual(values=c("yellow", "grey70"))
+
+pomc_ld_log_plot
+
+
+ggsave(filename="../figures/pomc_ld_log.png", plot=pomc_ld_log_plot, height=4, width=4)
+```
+
+
 ### POMC circadian + light-dark analysis
 
 ```{r}
@@ -442,11 +514,12 @@ pomc_hyp_plot <- ggplot() +
   theme(legend.position = "none") +
   labs(y="Relative Gene Expression",
        x="") +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  scale_fill_manual(values=c("yellow", "grey70"))
 
 pomc_hyp_plot
 
-ggsave(filename="../figures/pomc_hyp_ret.png", plot=pomc_hyp_plot, height=4, width=4)
+#ggsave(filename="../figures/pomc_hyp_ret.svg", plot=pomc_hyp_plot, height=4, width=6)
 
 
 #bad
@@ -472,11 +545,12 @@ pomc_hyp_log_plot <- ggplot() +
   theme_bw() %+replace%
   theme(legend.position = "none") +
   labs(y="log(Relative Gene Expression)",
-       x="")
+       x="") +
+  scale_fill_manual(values=c("yellow", "grey70"))
 
 pomc_hyp_log_plot
 
-ggsave(filename="../figures/pomc_hyp_ret_log.png", plot=pomc_hyp_log_plot, height=4, width=4)
+#ggsave(filename="../figures/pomc_hyp_ret_log.png", plot=pomc_hyp_log_plot, height=4, width=6)
 ```
 
 
