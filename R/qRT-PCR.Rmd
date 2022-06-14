@@ -252,7 +252,7 @@ pomc_ld_plot <- ggplot() +
 
 pomc_ld_plot
 
-ggsave(filename="../figures/pomc_ld.png", plot=pomc_ld_plot, height=4, width=4)
+#ggsave(filename="../figures/pomc_ld.png", plot=pomc_ld_plot, height=4, width=4)
 ```
 
 ```{r}
@@ -285,7 +285,7 @@ pomc_ld_log_plot <- ggplot() +
 pomc_ld_log_plot
 
 
-ggsave(filename="../figures/pomc_ld_log.png", plot=pomc_ld_log_plot, height=4, width=4)
+#ggsave(filename="../figures/pomc_ld_log.png", plot=pomc_ld_log_plot, height=4, width=4)
 ```
 
 
@@ -519,7 +519,8 @@ pomc_hyp_plot <- ggplot() +
 
 pomc_hyp_plot
 
-#ggsave(filename="../figures/pomc_hyp_ret.svg", plot=pomc_hyp_plot, height=4, width=6)
+
+#ggsave(filename="../figures/pomc_hyp_ret.svg", plot=pomc_hyp_plot, height=4, width=4)
 
 
 #bad
@@ -534,7 +535,7 @@ lattice::qqmath(pomc_hyp_log_lmer)
 
 anova(pomc_hyp_log_lmer)
 emmeans(pomc_hyp_log_lmer, pairwise ~ Condition | Tissue)$contrasts
-emmeans(pomc_hyp_log_lmer, pairwise ~ Tissue | Condition)$contrasts
+emmeans(pomc_hyp_log_lmer, pairwise ~ Tissue)$contrasts
 
 pomc_hyp_log_plot <- ggplot() +
   stat_summary(data=pomc_hyp, aes(x=Condition, y=log(RGE), fill=Condition),
@@ -550,62 +551,6 @@ pomc_hyp_log_plot <- ggplot() +
 
 pomc_hyp_log_plot
 
-#ggsave(filename="../figures/pomc_hyp_ret_log.png", plot=pomc_hyp_log_plot, height=4, width=6)
-```
-
-
-
-```{r}
-pomc_hyp <- read.csv("../data/06092022-POMC-hypothalamus-only.csv",
-                     fileEncoding = 'UTF-8-BOM')
-pomc_hyp <- pomc_hyp %>% mutate(Condition = as.factor(Condition))
-pomc_hyp
-
-pomc_hyp_summ <- pomc_hyp %>% group_by(Condition) %>%
-                      summarise(n = n(),
-                                mean = mean(RGE),
-                                sd = sd(RGE),
-                                log_mean = mean(log(RGE)),
-                                log_sd = sd(log(RGE)))
-pomc_hyp_summ
-
-pomc_hyp_plot <- ggplot() +
-  stat_summary(data=pomc_hyp, aes(x=Condition, y=RGE, fill=Condition),
-               fun = 'mean', geom="bar", width=0.75) +
-  geom_errorbar(data=pomc_hyp_summ, aes(x=Condition, ymin=mean-sd, ymax=mean+sd), width=0.2) +
-  geom_point(data=pomc_hyp, aes(x=Condition, y=RGE), size=2) +
-  theme_bw() %+replace%
-  theme(legend.position = "none") +
-  labs(y="Relative Gene Expression",
-       x="") +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.25)))
-
-pomc_hyp_plot
-
-ggsave(filename="../figures/pomc_hyp.png", plot=pomc_hyp_plot, height=4, width=4)
-
-#bad
-pomc_hyp_lm <- lm(RGE ~ Condition, pomc_hyp)
-plot(pomc_hyp_lm, which=c(1,2))
-#better
-pomc_hyp_log_lm <- lm(log(RGE) ~ Condition, pomc_hyp)
-plot(pomc_hyp_log_lm, which=c(1,2))
-
-anova(pomc_hyp_log_lm)
-t.test(log(RGE) ~ Condition, pomc_hyp)
-
-pomc_hyp_log_plot <- ggplot() +
-  stat_summary(data=pomc_hyp, aes(x=Condition, y=log(RGE), fill=Condition),
-               fun = 'mean', geom="bar", width=0.75) +
-  geom_errorbar(data=pomc_hyp_summ, aes(x=Condition, ymin=log_mean-log_sd, ymax=log_mean+log_sd), width=0.2) +
-  geom_point(data=pomc_hyp, aes(x=Condition, y=log(RGE)), size=2) +
-  theme_bw() %+replace%
-  theme(legend.position = "none") +
-  labs(y="log(Relative Gene Expression)",
-       x="")
-
-pomc_hyp_log_plot
-
-ggsave(filename="../figures/pomc_hyp_log.png", plot=pomc_hyp_log_plot, height=4, width=4)
+#ggsave(filename="../figures/pomc_hyp_ret_log.png", plot=pomc_hyp_log_plot, height=4, width=4)
 ```
 
