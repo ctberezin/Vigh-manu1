@@ -1,4 +1,4 @@
-# Vigh-manu1
+# Endogenous Opioid Signaling in the Retina Modulates Sleep/Wake Activity in Mice
 
 This respository contains data as well as the code for data analysis and data visualizations for "Endogenous opioid signaling in the retina modulates sleep/wake activity in mice".
 
